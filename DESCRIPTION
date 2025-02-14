@@ -17,3 +17,5 @@ Imports:
     fs,
     rappdirs,
     vctrs
+URL: https://github.com/torfason/fxconvert
+BugReports: https://github.com/torfason/fxconvert/issues
