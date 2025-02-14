@@ -14,8 +14,11 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
+    dplyr,
     fs,
+    lubridate,
     rappdirs,
+    tibble,
     vctrs
 URL: https://github.com/torfason/fxconvert
 BugReports: https://github.com/torfason/fxconvert/issues
