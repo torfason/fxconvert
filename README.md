@@ -1,0 +1,34 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# fxconvert
+
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+Convert currencies based on rates obtained directly from central banks
+in an open and transparent way, without any API dependencies or
+registration requirements. Conversion with `fx_convert()` is fully
+vectorized in amounts, currencies, and dates, uses local data when
+available, and downloads up-to-date rates from a GitHub repository in
+`parquet` format when needed.
+
+## Installation
+
+You can install the development version of `fxconvert` like so:
+
+``` r
+pak::pak("torfason/fxconvert")
+```
+
+## Example
+
+The package includes a helper function to fill internal gaps in a vector
+but not any gaps at the beginning or the end of the vector:
+
+``` r
+library(fxconvert)
+fx_vec_fill_gaps(c(NA, 1, NA, 2, NA))
+#> [1] NA  1  1  2 NA
+```
