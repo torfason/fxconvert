@@ -19,3 +19,6 @@ Imports:
     vctrs
 URL: https://github.com/torfason/fxconvert
 BugReports: https://github.com/torfason/fxconvert/issues
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
