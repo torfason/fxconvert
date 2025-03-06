@@ -4,7 +4,12 @@
 \alias{fx_get_fxdata_dir}
 \title{Get Local FX Data Directory}
 \usage{
-fx_get_fxdata_dir()
+fx_get_fxdata_dir(..., options = fx_options())
+}
+\arguments{
+\item{...}{Reserved. Options parameter must be named}
+
+\item{options}{A valid \code{fx_options} object.}
 }
 \value{
 A character string representing the path to the local FX data

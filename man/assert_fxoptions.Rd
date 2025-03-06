@@ -13,7 +13,9 @@ assert_fxoptions(x)
 Unchanged input if valid, otherwise an error is thrown.
 }
 \description{
-Verifies that x is an fx_options object (of class
-\code{fxconvert_options}) and that all elements of the object are valid for
-such an object.
+Verifies that \code{x} is an \code{fx_options} object (of class
+\code{fxconvert_fx_options}) and that all elements of the object are
+valid for such an object. Use \code{fx_options()} to create \code{fx_options}
+objects.
 }
+\keyword{internal}

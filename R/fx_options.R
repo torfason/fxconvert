@@ -25,26 +25,28 @@ fx_options <- function(...,
       bank = bank,
       repo = repo
     ),
-    class = "fxconvert_options"
+    class = "fxconvert_fx_options"
   )
 
   # Verify object and that ... was unused before returning the object
-  stopifnot(length(list(...)) == 0)
+  assert_nodots(...)
   assert_fxoptions(obj)
 }
 
 
 #' @title Verify that x is a valid fx_options object
-#' @description Verifies that x is an fx_options object (of class
-#'   `fxconvert_options`) and that all elements of the object are valid for
-#'   such an object.
+#' @description Verifies that `x` is an `fx_options` object (of class
+#'   `fxconvert_fx_options`) and that all elements of the object are
+#'   valid for such an object. Use `fx_options()` to create `fx_options`
+#'   objects.
 #' @param x An object to verify
 #' @return Unchanged input if valid, otherwise an error is thrown.
+#' @keywords internal
 assert_fxoptions <- function(x) {
 
   # Verify input
   assert_list(x)
-  assert_class(x, "fxconvert_options")
+  assert_class(x, "fxconvert_fx_options")
   assert_string(x$workspace)
   assert_string(x$bank)
   assert_string(x$repo)
