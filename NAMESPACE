@@ -2,6 +2,7 @@
 
 export(fx_date_seq)
 export(fx_date_seq_lumpy)
+export(fx_get)
 export(fx_get_fxdata_dir)
 export(fx_init)
 export(fx_options)
