@@ -29,7 +29,7 @@ Imports:
     httr2,
     jsonlite,
     nanoparquet
-URL: https://github.com/torfason/fxconvert
+URL: https://github.com/torfason/fxconvert, https://torfason.github.io/fxconvert/
 BugReports: https://github.com/torfason/fxconvert/issues
 Suggests: 
     testthat (>= 3.0.0)
