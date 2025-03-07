@@ -1,5 +1,7 @@
 ---
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -38,7 +40,24 @@ The package includes a helper function to fill internal gaps in a vector but not
 any gaps at the beginning or the end of the vector:
 
 ```{r example}
+# Load the package
 library(fxconvert)
-fx_vec_fill_gaps(c(NA, 1, NA, 2, NA))
+library(dplyr)
+
+# Initialize the local data store, downloading fx data from GitHub
+fx_init(verbose = FALSE)
+
+# Retrieve specific exchange rates (fully vectorized)
+fx_get("usd", "eur", "2020-01-03")
+fx_get(from   = c("usd", "eur", "gbp"),
+       to     = c("eur", "gbp", "usd"),
+       fxdate = "2020-01-03") 
+
+# Convert amounts between currencies (fully vectorized),
+# useful when manipulating data frames
+d <- tibble(date = c("2020-01-03", "2024-05-06"), 
+            price_usd = c(999, 13.7))
+d |> 
+  mutate(price_eur = fx_convert(price_usd, "usd", "eur", date))
 ```
 
