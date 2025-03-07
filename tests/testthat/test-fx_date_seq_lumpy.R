@@ -56,6 +56,36 @@ test_that("fx_date_seq_lumpy() works", {
 
 })
 
+
+test_that("fx_date_seq_lumpy() works even better", {
+
+  # Example usage
+  from_date <- "1980-11-29"
+  to_date <- "2024-02-03"
+  separated_ranges <- fx_date_seq_lumpy(from_date, to_date)
+
+  testthat::expect_equal(separated_ranges,
+                         c("1980-11-29", "1980-11-30",
+                           "1980-12",
+                           as.character(1981:2023),
+                           "2024-01",
+                           "2024-02-01", "2024-02-02", "2024-02-03") )
+
+  separated_ranges <- fx_date_seq_lumpy("1980-12-01", "2024-01-31")
+  testthat::expect_equal(separated_ranges,
+                         c("1980-12",
+                           as.character(1981:2023),
+                           "2024-01") )
+
+  separated_ranges <- fx_date_seq_lumpy("1980-12-31", "2024-12-31")
+  testthat::expect_equal(separated_ranges,
+                         c("1980-12-31",
+                           as.character(1981:2023),
+                           "2024") )
+
+})
+
+
 test_that("fx_date_seq_lumpy() works with string inputs", {
 
   # Minimal range that spans all variation on each end
