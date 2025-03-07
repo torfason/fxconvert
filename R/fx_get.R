@@ -1,9 +1,8 @@
 
-#' Retrieve Foreign Exchange Rates for a Specific Date
+#' Retrieve exchange rates or convert amounts between currencies
 #'
-#' This function returns the exchange rates between two specified currencies for
-#' a given date, and calculates the exchange rate from the first specified
-#' currency to the second.
+#' These functions are used to convert amounts from one currency to another, or
+#' to directly return the exchange rates between two specified currencies.
 #'
 #' @param from The ISO currency code (as a character string) for the base currency.
 #' @param to The ISO currency code (as a character string) for the target currency.
@@ -14,12 +13,12 @@
 #' @param .interpolate If a weekend date is requested, should the previous days rate
 #'   be returned. If this is false, a weekend date will result in an error.
 #'
-#' @return A numeric value representing the exchange rate from the `from` currency
-#'        to the `to` currency on the specified `fxdate`. The exchange rate
-#'        between`from` and `to`, given in a way that to convert, from `from`
-#'        to `to` one would multiply by the exchange rate. This means that the
-#'        function may not always give the expected value for well-known
-#'        currency pairs that are always quoted in the same direction.
+#' @return For `fx_get()`, a numeric value representing the exchange rate from
+#'   the `from` currency to the `to` currency on the specified `fxdate`. The
+#'   exchange rate between`from` and `to`, given in a way that to convert, from
+#'   `from` to `to` one would multiply by the exchange rate. This means that the
+#'   function may not always give the expected value for well-known currency
+#'   pairs that are always quoted in the same direction.
 #' @export
 fx_get <- function(from, to, fxdate, fxsource = "ecb", ..., .interpolate = FALSE) {
 
@@ -47,10 +46,7 @@ fx_get <- function(from, to, fxdate, fxsource = "ecb", ..., .interpolate = FALSE
 #' retrieves exchange rates between two specified currencies for a given date,
 #' and calculates the exchange rate from the first specified currency to the second.
 #'
-#' @examples
-#' #fx_get("USD", "EUR", "2022-01-01")
-#'
-#' @rdname fx_get
+#' @keywords internal
 fx_get_single <- function(from, to, fxdate, fxsource = "ecb", ..., .interpolate = FALSE) {
 
   stopifnot(length(from) == 1)
