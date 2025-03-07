@@ -5,14 +5,21 @@
 NULL
 
 #' Assert that no dots arguments are passed
-#' @description Asserts that no named or unnamed parameters to the
-#'   function end up assigned to the `ellipsis` or `dots` argument.
-#'   The function throws an error if any parameters match the
-#'   argument.
-#' @param ... The `ellipsis` argument should be empty.
+#' @description This is an alias for `rlang::check_dots_empty()`, for
+#'   consistency with other arguments. The function throws an error if any
+#'   unnamed parameters were passed to the function where this is called.
 #' @keywords internal
-assert_nodots <- function(...) {
-  if (length(list(...)) != 0) {
-    stop("No unnamed arguments are allowed / The ... argument must be empty")
-  }
+assert_dots_empty <- rlang::check_dots_empty
+
+
+# This function is purely a workaround for check errors.
+#
+# Packages listed in imports but only used indirectly result in check errors.
+# This function adds usage to these packages, silencing R check.
+#
+# This function should never be called.
+workaround_for_import_checks <- function()
+{
+  dbplyr::lazy_frame(a = letters)
+  rlang::int()
 }

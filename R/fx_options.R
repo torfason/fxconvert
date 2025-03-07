@@ -29,7 +29,7 @@ fx_options <- function(...,
   )
 
   # Verify object and that ... was unused before returning the object
-  assert_nodots(...)
+  assert_dots_empty()
   assert_fxoptions(obj)
 }
 

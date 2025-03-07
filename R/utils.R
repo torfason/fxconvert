@@ -18,7 +18,7 @@ utils::globalVariables(
 fx_get_fxdata_dir <- function(..., options = fx_options()) {
 
   # Check input
-  assert_nodots(...)
+  assert_dots_empty()
   assert_fxoptions(options)
 
   # Construct

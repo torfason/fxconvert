@@ -20,6 +20,7 @@ Imports:
     duckdb,
     fs,
     lubridate,
+    rlang,
     rappdirs,
     tibble,
     purrr,
