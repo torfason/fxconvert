@@ -29,12 +29,9 @@ fx_get <- function(from, to, fxdate, fxsource = "ecb", ..., .interpolate = FALSE
     fxdate = fxdate
   )
 
-  # Convert recycled arguments to a tibble
-  args_tibble <- tibble::as_tibble(args)
-
   # Apply fx_get_single over the rows of the tibble
   purrr::pmap_vec(
-    args_tibble,
+    args,
     ~ fx_get_single(..1, ..2, ..3, fxsource = fxsource, ..., .interpolate = .interpolate),
     .ptype = double()
   )
