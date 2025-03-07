@@ -4,6 +4,9 @@
 #' @importFrom checkmate assert_list assert_class
 NULL
 
+#' @importFrom rlang arg_match
+NULL
+
 #' Assert that no dots arguments are passed
 #' @description This is an alias for `rlang::check_dots_empty()`, for
 #'   consistency with other arguments. The function throws an error if any

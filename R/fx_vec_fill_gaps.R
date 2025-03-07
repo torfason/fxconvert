@@ -45,7 +45,7 @@ fx_vec_fill_gaps <- function(x, direction = c("down", "up", "downup", "updown"),
                   max_fill = NULL) {
   # Verify input
   stopifnot(is.atomic(x))
-  direction <- match.arg(direction)
+  direction <- arg_match(direction)
   result <- x
 
   # Find indexes of non-empty elements and fill only in that range

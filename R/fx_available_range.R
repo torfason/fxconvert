@@ -21,8 +21,8 @@
 fx_available_range <- function(fxsource = "ecb", where = c("local", "server")) {
 
   # Verify and preprocess inputs
-  fxsource <- match.arg(fxsource)
-  where <- match.arg(where)
+  fxsource <- arg_match(fxsource)
+  where <- arg_match(where)
 
   if (where == "local") {
     # Open con, prepare dbplyr table, and register con for closing

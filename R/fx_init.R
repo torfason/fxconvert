@@ -43,8 +43,8 @@ fx_init <- function(..., fxsource = "ecb", verbose = TRUE,
   }
 
   # Parameters and key variables
-  fxsource <- match.arg(fxsource)
-  approach <- match.arg(approach)
+  fxsource <- arg_match(fxsource)
+  approach <- arg_match(approach)
   fxdata_dir <- fx_get_fxdata_dir()
 
   if (approach == "fresh") {

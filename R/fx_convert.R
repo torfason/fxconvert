@@ -16,7 +16,7 @@ fx_convert <- function(amount, from, to, fxdate, fxsource = "ecb", ..., .interpo
     from = from,
     to = to,
     fxdate = fxdate)
-  fxsource <- match.arg(fxsource)
+  fxsource <- arg_match(fxsource)
 
   args$amount * fx_get(args$from, args$to, args$fxdate, fxsource, ..., .interpolate = .interpolate)
 }

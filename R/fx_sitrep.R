@@ -12,7 +12,7 @@
 fx_sitrep <- function(fxsource = "ecb") {
 
   # Verify and preprocess inputs
-  fxsource <- match.arg(fxsource)
+  fxsource <- arg_match(fxsource)
 
   # Open con, prepare dbplyr table, and register con for closing
   fxdata_dir <- fx_get_fxdata_dir()
