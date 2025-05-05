@@ -8,7 +8,7 @@
 #'
 #' @rdname fx_get
 #' @export
-fx_convert <- function(amount, from, to, fxdate, fxsource = "ecb", ..., .interpolate = FALSE) {
+fx_convert <- function(amount, from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
 
   # Validate and recycle
   args <- vctrs::vec_recycle_common(
@@ -16,7 +16,7 @@ fx_convert <- function(amount, from, to, fxdate, fxsource = "ecb", ..., .interpo
     from = from,
     to = to,
     fxdate = fxdate)
-  fxsource <- arg_match(fxsource)
+  bank <- arg_match(bank)
 
-  args$amount * fx_get(args$from, args$to, args$fxdate, fxsource, ..., .interpolate = .interpolate)
+  args$amount * fx_get(args$from, args$to, args$fxdate, bank, ..., .interpolate = .interpolate)
 }

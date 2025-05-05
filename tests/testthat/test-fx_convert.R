@@ -10,7 +10,7 @@ test_that("fx_convert() works", {
   fx_convert(10:41, "gbp", "usd",
              fx_date_seq("2023-12-15", "2024-01-15"),
              .interpolate = TRUE,
-             fxsource = "ecb") |>
+             bank = "ecb") |>
     expect_equal(gold, tolerance = 0.01)
 
 })

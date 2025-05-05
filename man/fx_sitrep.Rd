@@ -4,11 +4,18 @@
 \alias{fx_sitrep}
 \title{Print debug information about the exchange rate database}
 \usage{
-fx_sitrep(fxsource = "ecb")
+fx_sitrep(bank = c("ecb", "cbi", "fed", "xfed"), verbose = TRUE)
 }
 \arguments{
-\item{fxsource}{Character string specifying the source of exchange rate data.
+\item{bank}{Character string specifying the source of exchange rate data.
 Defaults to "ecb". Must match a valid source.}
+
+\item{verbose}{Should it output results or not (only returning \code{TRUE}/\code{FALSE})}
+}
+\value{
+\code{TRUE} if all looks well and correctly initialized. \code{FALSE} if the
+database does not seem to be initialized. Throws an error if there are
+errors in the data structures.
 }
 \description{
 Provides a status report for the exchange rate database, printing key

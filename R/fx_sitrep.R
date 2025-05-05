@@ -5,57 +5,67 @@
 #' information about the database file and available data, including
 #' a preview of available dates and consistency checks.
 #'
-#' @param fxsource Character string specifying the source of exchange rate data.
+#' @param bank Character string specifying the source of exchange rate data.
 #'   Defaults to "ecb". Must match a valid source.
+#' @param verbose Should it output results or not (only returning `TRUE`/`FALSE`)
+#' @return `TRUE` if all looks well and correctly initialized. `FALSE` if the
+#'   database does not seem to be initialized. Throws an error if there are
+#'   errors in the data structures.
 #'
 #' @keywords internal
-fx_sitrep <- function(fxsource = "ecb") {
+fx_sitrep <- function(bank = c("ecb", "cbi", "fed", "xfed"), verbose = TRUE) {
 
   # Verify and preprocess inputs
-  fxsource <- arg_match(fxsource)
+  bank <- arg_match(bank)
+  assert_flag(verbose)
+
+  if (verbose) {
+    xcat <- base::cat
+    xprint <- base::print
+  } else {
+    xcat <- function(x, ...) {invisible(x)}
+    xprint <- function(x, ...) {invisible(x)}
+  }
 
   # Open con, prepare dbplyr table, and register con for closing
   fxdata_dir <- fx_get_fxdata_dir()
-  duckdb_file <- fs::path(fxdata_dir, paste0(fxsource, ".duckdb"))
+  duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
 
   # Output the param values (always present)
-  cat("Status report for fx package:\n")
-  cat("fxsource: ", fxsource, "\n")
-  cat("fxdir:    ", fxdata_dir, "\n")
-  cat("dbfile:   ", duckdb_file, "\n")
+  xcat("Status report for fx package:\n")
+  xcat("bank:     ", bank, "\n")
+  xcat("fxdir:    ", fxdata_dir, "\n")
+  xcat("dbfile:   ", duckdb_file, "\n")
 
   # Abort if DB is not found
   if (!fs::file_exists(duckdb_file)) {
-    cat("ALERT:     <dbfile> does not exist. You probably need to run fx_init()\n")
-    return(invisible(NULL))
+    xcat("ALERT:     <dbfile> does not exist. You probably need to run fx_init()\n")
+    return(invisible(FALSE))
   }
 
-  # Connect to db
-  con <- duckdb::dbConnect(duckdb::duckdb(duckdb_file, read_only = TRUE))
-  on.exit(duckdb::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  # Connect to db inside with_output_sink() because it outputs a newline
+  withr::with_output_sink(nullfile(), {
+    con <- duckdb::dbConnect(duckdb::duckdb(duckdb_file, read_only = TRUE))
+    withr::defer(duckdb::dbDisconnect(con, shutdown = TRUE))
+  })
+
+  # Create a table and select the dates.
   fxtable <- dplyr::tbl(con, "fxtable")
-
-  if (exists("fxdate")) stop("Workaround for check error: fxdate already exists")
-  fxdate <- "Workaround for check error"
   available_dates <- fxtable |>
-    dplyr::select(fxdate) |>
+    dplyr::select("fxdate") |>
     dplyr::collect() |>
-    dplyr::mutate(fxdate = as.character(fxdate)) |>
-    unlist() |>
-    as.vector()
+    purrr::pluck("fxdate")
 
-  cat("tables:   ", duckdb::dbListTables(con), "\n")
-  cat("start:     ")
-  available_dates |> utils::head(3) |> c("...") |> print()
-  cat("end:       ")
-  available_dates |> utils::tail(3) |> rev() |> c("...") |> print()
+  xcat("tables:   ", duckdb::dbListTables(con), "\n")
+  xcat("start:     ")
+  available_dates |> utils::head(3) |> format() |> c("...") |> xprint()
+  xcat("end:       ")
+  available_dates |> utils::tail(3) |> format() |> rev() |> c("...") |> xprint()
 
   # Sanity checks, if any of these fails, we stop with a loud error
-  available_dates_maxdiff <- available_dates |> lubridate::ymd() |> diff() |> max()
-  available_dates_mindiff <- available_dates |> lubridate::ymd() |> diff() |> min()
-  if ( available_dates_maxdiff != 1 )
-    stop("Gaps too wide in date ranges (available_dates_maxdiff != 1)")
-  if (available_dates_maxdiff != 1 )
-    stop("Gaps too narrow in date ranges (available_dates_maxdiff != 1)")
+  if (!all(diff(available_dates) == 1))
+    cli::cli_abort("Some diffs in available dates do not equal one")
 
+  # Return TRUE if sitrep() looks sane
+  return(invisible(TRUE))
 }

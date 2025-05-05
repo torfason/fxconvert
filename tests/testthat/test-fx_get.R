@@ -29,6 +29,16 @@ test_that("fx_get() works for valid input", {
     expect_equal(c(131.88, 0.83), tolerance = 0.01)
 })
 
+test_that("fx_get() converts correctly from currency to itself", {
+  skip_if(!fs::dir_exists(fx_get_fxdata_dir()),
+          "Package not initialized? (workspace directory missing)")
+
+  fx_get("ISK", "ISK", "2024-04-02") |>
+    expect_equal(1) |>
+    expect_warning("Looks like you ae converting to same currency.*")
+
+})
+
 test_that("fx_get() handles scalar or zero-length inputs correctly", {
   skip_if(!fs::dir_exists(fx_get_fxdata_dir()),
           "Package not initialized? (workspace directory missing)")

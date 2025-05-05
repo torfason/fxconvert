@@ -56,7 +56,7 @@ The different approaches, or actions, are subject to change. In particular
 they should support offline use with appropriate warnings. Potential actions:
 \itemize{
 \item \code{auto}    (equivalent to \code{once}=TRUE, only updates if it has not been updated in this session (but must ensure sitrep is OK))
-\item \code{update}  (equivalent to \code{incremental}, warns on offline, error if no data)
+\item \code{update}  (equivalent to older \code{incremental}, warns on offline, error if no data)
 \item \code{offline} (avoid internet access, no warn on offline unless data is missing)
 \item \code{remove}  (deletes all local data and exits without downloading new data.)
 }
