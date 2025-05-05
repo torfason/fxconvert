@@ -109,4 +109,48 @@ fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FA
   result
 }
 
+#' Fetch FX rates from multiple banks
+#'
+#' Retrieves exchange rates for a given currency pair and date from one or more
+#' data sources (ECB, CBI, or Fed), returning either a “wide” or “long” tibble.
+#'
+#' @param from          Base currency code (e.g., `"USD"`).
+#' @param to            Quote currency code (e.g., `"EUR"`).
+#' @param fxdate        Date for which the rate is requested.
+#' @param bank          Source bank (one or more of `c("ecb", "cbi", "fed")`).
+#' @param ...           Additional arguments passed to `fx_get()`.
+#' @param .interpolate  Logical. If `TRUE`, interpolate missing dates.
+#' @param result_shape  `"wide"` (col per bank) or `"long"` (row per bank).
+#'
+#' @return A tibble with the rates from each of the `bank`s.
+#'
+#' @keywords internal
+#' @export
+fx_get_multibank <- function(from, to, fxdate, bank = c("ecb", "cbi", "fed"), ...,
+                             .interpolate = FALSE, result_shape = c("wide", "long")) {
+
+  result_shape <- arg_match(result_shape)
+
+  if (result_shape == "long") {
+    f <- function(x) {
+      result = fx_get(from, to, fxdate, bank = x, ..., .interpolate = .interpolate)
+      tibble::tibble(fxdate, from, to, bank = x, rate = result)
+    }
+    l <- lapply(bank, f)
+    result <- l |> dplyr::bind_rows()
+  } else if (result_shape == "wide") {
+    f <- function(x) {
+      result = fx_get(from, to, fxdate, bank = x, ..., .interpolate = .interpolate)
+    }
+    l <- lapply(bank, f)
+    names(l) = bank
+    result <- dplyr::bind_cols(tibble::tibble(fxdate, from, to),
+                               tibble::as_tibble(l))
+  }
+  result
+}
+
+
+
+
 
