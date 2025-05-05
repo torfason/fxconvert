@@ -4,12 +4,14 @@
 \alias{fx_date_seq_lumpy}
 \title{Generate a lumpy sequene of dates}
 \usage{
-fx_date_seq_lumpy(from_date, to_date)
+fx_date_seq_lumpy(from_date, to_date, lump_decades = FALSE)
 }
 \arguments{
 \item{from_date}{A date or character string in "YYYY-MM-DD" format.}
 
 \item{to_date}{A date or character string in "YYYY-MM-DD" format.}
+
+\item{lump_decades}{Should decades be lumped using \verb{199X} format?}
 }
 \value{
 A character vector of separated date ranges, sorted chronologically.

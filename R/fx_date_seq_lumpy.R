@@ -44,6 +44,64 @@ fx_date_seq <- function(from_date, to_date) {
 #' @keywords internal
 #' @export
 fx_date_seq_lumpy <- function(from_date, to_date, lump_decades = FALSE) {
+  lump_unit_now <- dplyr::case_match(lump_decades,
+                                     FALSE ~ "year",
+                                     TRUE ~ "decade")
+  lump_unit_halt <- "decaday"
+  lump_dates_recursive(dates = fx_date_seq(from_date, to_date),
+                              lump_unit_now = lump_unit_now,
+                              lump_unit_halt = lump_unit_halt) |> unique()
+}
+
+
+#' Generate a lumpy sequence of dates with a recursive approach
+#'
+#' @description
+#' The function lumps dates into common eras, with eras of different length,
+#' ranging from `millennium` to `decaday`. A `decaday` is the set of days in a
+#' month that have a common number in the tens-place (1-9, 10-19, 20-29, 30-31).
+#'
+#' Allowed lump eras are: `millennium`, `century`, `decade`, `year`, `month`,
+#' and `decaday`.
+#'
+#' It calls a non-exported function to do the actual recursion, after doing some
+#' of the more expensive input checking only on the initial input.
+#'
+#' @param dates Strictly increasing date sequence to lump
+#' @param lump_from Largest era unit to lump
+#' @param lump_to Smallest era unit to lump
+#'
+#' @return A character vector of date ranges.
+#'
+#' @keywords internal
+#' @export
+fx_lump_dates <- function(dates, lump_from = "millennium", lump_to = "decaday") {
+
+  lump_units = c("millennium", "century", "decade", "year", "month", "decaday", "day")
+
+  # Verify inputs. We don't allow day as an input in the outer function
+  assert_date(dates)
+  arg_match(lump_from, lump_units[1:5])
+  arg_match(lump_to, lump_units[1:6])
+
+  # Verify order before generating lump_unit_now and lump_unit_halt for recursion
+  if (which(lump_from == lump_units) > which(lump_to == lump_units))
+    cli::cli_abort("lump_from must be a larger era unit than lump_to")
+  lump_unit_now  <- lump_from
+  lump_unit_halt <- lump_units[which(lump_units == lump_to) + 1]
+
+  # Additional verification, some of which is expensive on long sequences
+  if (!all(diff(dates) == 1))
+    cli::cli_abort("dates must be strictly increasing sequence")
+  if (length(dates) > 0 && lubridate::year(dates[1]) < 1000)
+    cli::cli_abort("dates before '1000-01-01' are not supported")
+
+  lump_dates_recursive(dates, lump_unit_now, lump_unit_halt)
+}
+
+
+# Original internal version of the old approach to lumping dates
+date_seq_lumpy_org <- function(from_date, to_date, lump_decades = FALSE) {
 
   # Create a sequence of dates from the start to the end
   date_seq <- fx_date_seq(from_date, to_date)
@@ -134,7 +192,7 @@ fx_date_seq_lumpy <- function(from_date, to_date, lump_decades = FALSE) {
 
 
 # This is not a good version
-fx_date_seq_lumpy_x <- function(from_date, to_date, lump_decades = FALSE) {
+date_seq_lumpy_x <- function(from_date, to_date, lump_decades = FALSE) {
   # Create the full daily sequence.
   dates <- fx_date_seq(from_date, to_date)
   result <- character(0)
@@ -195,16 +253,46 @@ fx_date_seq_lumpy_x <- function(from_date, to_date, lump_decades = FALSE) {
 }
 
 
-first_date <- function(x,  unit = c("millenium", "century", "decade",
-                                    "year", "month", "decaday")) {
+# Helper to apply a function on the rle encoding of a vector and then decode it
+# again. Works on simple vector classes such as `Date`.
+rle_apply <- function(x, f, ...) {
 
+  # Extract original class before stripping from x
+  old_class <- class(x)
+  x <- unclass(x)
+  if (!is.null(attributes(x)))
+    cli::cli_abort("x must not have attributes but has:", attributes(x))
+
+  # rle and apply function
+  r <- rle(x)
+  class(r$values) <- old_class
+  r$values <- f(r$values, ...)
+  new_class <- class(r$values)
+  r$values <- unclass(r$values)
+  if (!is.null(attributes(r$values)))
+    cli::cli_abort("f must not set attributes but sets:", attributes(x))
+  if (length(r$values) != length(r$lengths))
+    cli::cli_abort("Function must not change length of its argument")
+
+  # Reconstruct full vector and return
+  result <- inverse.rle(r)
+  class(result) <- new_class
+  result
+}
+
+
+# Helper to find the first date in a specific era. Uses
+# `lubridate::floor_date()` under the hood, re-coding some of the eras, only
+# implementing its own logic for the `decaday` era.
+first_date <- function(x,  unit = c("millennium", "century", "decade",
+                                    "year", "month", "decaday")) {
   # Verify inputs
   assert_date(x)
   assert_string(unit)
   unit <- arg_match(unit)
 
   if (unit != "decaday") {
-    unit <- dplyr::case_match(unit, "millenium" ~ "1000 year", "century" ~ "100 year",
+    unit <- dplyr::case_match(unit, "millennium" ~ "1000 year", "century" ~ "100 year",
                        "decade" ~ "10 year", .default = unit )
     lubridate::floor_date(x, unit)
   } else {
@@ -213,16 +301,19 @@ first_date <- function(x,  unit = c("millenium", "century", "decade",
   }
 }
 
-last_date <- function(x,  unit = c("millenium", "century", "decade",
-                                    "year", "month", "decaday")) {
 
+# Helper to find the first date in a specific era. Uses
+# `lubridate::ceiling_date()` under the hood, re-coding some of the eras, only
+# implementing its own logic for the `decaday` era.
+last_date <- function(x,  unit = c("millennium", "century", "decade",
+                                    "year", "month", "decaday")) {
   # Verify inputs
   assert_date(x)
   assert_string(unit)
   unit <- arg_match(unit)
 
   if (unit != "decaday") {
-    unit <- dplyr::case_match(unit, "millenium" ~ "1000 year", "century" ~ "100 year",
+    unit <- dplyr::case_match(unit, "millennium" ~ "1000 year", "century" ~ "100 year",
                        "decade" ~ "10 year", .default = unit )
     lubridate::ceiling_date(x, unit) - 1
   } else {
@@ -234,48 +325,33 @@ last_date <- function(x,  unit = c("millenium", "century", "decade",
 }
 
 
+# A list of helper formatting functions specifically for lumping each of the
+# seven `eras` supported. Hard-coded with an emphasis on speed, although there
+# are still probably some optimization opportunities.
 fmt_funs <- list(
-  millenium = \(x){sprintf("%dXXX", lubridate::year(x) %/% 1000)},
+  millennium = \(x){sprintf("%dXXX", lubridate::year(x) %/% 1000)},
   century   = \(x){sprintf("%dXX",  lubridate::year(x) %/%  100)},
   decade    = \(x){sprintf("%dX",   lubridate::year(x) %/%   10)},
   year      = \(x){format(x, "%Y")},
   month     = \(x){format(x, "%Y-%m")},
   decaday   = \(x){sprintf("%s%dX", format(x, "%Y-%m-"),
                                     lubridate::day(x) %/% 10)},
-  day       = \(x){format(x, "%Y-%m-%d")})
+  day       = \(x){format(x, "%Y-%m-%d")}
+)
 
 
-#' Generate a lumpy sequence of dates with a recursive approach
-#'
-#' The function lumps dates from millenia to "decadays".
-#'
-#' @param dates Strictly increasing date sequence to lump
-#' @param lump_unit_now Which unit to lump next
-#' @param lump_unit_halt Which unit to halt on. Note that this unit is
-#'   *not* lumped, the function immediately exits on this unit.
-#'
-#' @return A character vector of date ranges.
-#'
-#' @keywords internal
-#' @export
-fx_date_seq_lumpy_recursive <- function(dates,
-                                        lump_unit_now = "millenium",
+# Recursive workhorse function for fx_lump_dates
+lump_dates_recursive <- function(dates,
+                                        lump_unit_now = "millennium",
                                         lump_unit_halt = "day") {
 
-  lump_units = c("millenium", "century", "decade", "year", "month", "decaday", "day")
+  lump_units = c("millennium", "century", "decade", "year", "month", "decaday", "day")
 
   # Verify inputs
   assert_date(dates)
   arg_match(lump_unit_now, lump_units)
   arg_match(lump_unit_halt, lump_units)
   lump_unit_next = lump_units[which(lump_unit_now == lump_units) + 1]
-
-
-  # Additional verification on dates
-  if(!all(diff(dates) == 1))
-    cli::cli_abort("dates must be strictly increasing sequence")
-  if(length(dates) > 0 && lubridate::year(dates[1]) < 1000)
-    cli::cli_abort("dates before '1000-01-01' are not supported")
 
   # Stop recursion on zero length or on completion of all lump units
   if (length(dates) == 0 || lump_unit_now == lump_unit_halt) {
@@ -285,21 +361,28 @@ fx_date_seq_lumpy_recursive <- function(dates,
   # Split input into three parts, format the center with fmt_funs,
   # and return the edges with a recursive call
   lump_lo <- first_date(dates, lump_unit_now)
-  lump_hi <- last_date(dates, lump_unit_now)
+
+  # Optimization using rle_apply and the fact that last_date should return the
+  # same result for dates and lump_lo. Unoptimized version commented out
+  #lump_hi_old <- last_date(dates, lump_unit_now)
+  lump_hi <- rle_apply(lump_lo, last_date, lump_unit_now)
+
+
   lump_range <- (lump_lo >= min(dates)) & (lump_hi <= max(dates))
   #tibble::tibble(dates, lump_lo, lump_hi, lump_range) |> print(n=33)
   if (!any(lump_range)) {
-    return(fx_date_seq_lumpy_recursive(dates, lump_unit_next, lump_unit_halt))
+    return(lump_dates_recursive(dates, lump_unit_next, lump_unit_halt))
   }
 
   # what if lump
   a <- min(which(lump_range))
   b <- max(which(lump_range))
   return(
-    c(fx_date_seq_lumpy_recursive(dates[seq2(1,a-1)], lump_unit_next, lump_unit_halt),
-      fmt_funs[[lump_unit_now]](dates[seq2(a,b)]),
-      fx_date_seq_lumpy_recursive(dates[seq2(b+1,length(dates))], lump_unit_next, lump_unit_halt)
+    c(lump_dates_recursive(dates[seq2(1,a-1)], lump_unit_next, lump_unit_halt),
+      # Optimization using rle_apply and same format for lump_lo as dates
+      #fmt_funs[[lump_unit_now]](dates[seq2(a,b)]),
+      rle_apply(lump_lo[seq2(a,b)], fmt_funs[[lump_unit_now]]),
+      lump_dates_recursive(dates[seq2(b+1,length(dates))], lump_unit_next, lump_unit_halt)
     )
   )
 }
-
