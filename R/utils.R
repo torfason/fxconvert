@@ -32,3 +32,49 @@ fx_get_fxdata_dir <- function(..., options = fx_options()) {
   ws_dir
 }
 
+
+#' Generate a random date between two dates
+#'
+#' Returns a single random date between `start_date` and `end_date`. If `seed` is
+#' provided, the result is reproducible.
+#'
+#' @param n Length of the result
+#' @param start_date Date or string on `ymd()` form. The start of the date range.
+#' @param end_date Date or string on `ymd()` form. The end of the date range.
+#' @param seed Optional integer. If provided, sets the random seed locally for
+#'   reproducibility.
+#' @return A `Date` object of length `n`.
+#'
+#' @examples
+#' random_date(3, "2000-01-01", "2020-12-31")
+#' random_date(5, as.Date("2000-01-01"), as.Date("2020-12-31"), seed = 42)
+#'
+#' @keywords internal
+#' @export
+random_date <- function(n,
+                        start_date = "1970-01-01",
+                        end_date = Sys.Date(),
+                        replace = FALSE,
+                        seed = NULL) {
+
+  # Prep and verify input
+  assert_number(n)
+  start_date <- lubridate::ymd(start_date)
+  end_date   <- lubridate::ymd(end_date)
+  assert_number(seed, null.ok = TRUE)
+
+  # Inner function to generate
+  generate <- function() {
+    as.Date(sample(as.integer(start_date):as.integer(end_date),
+                   n, replace = replace),
+            origin = "1970-01-01")
+  }
+
+  if (!is.null(seed)) {
+    withr::with_seed(seed, {generate()})
+  } else {
+    generate()
+  }
+}
+
+
