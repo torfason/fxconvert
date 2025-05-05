@@ -15,22 +15,28 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     checkmate,
+    cli,
     dplyr,
     dbplyr,
     duckdb,
     fs,
+    glue,
     lubridate,
     rlang,
     rappdirs,
+    stringr,
     tibble,
     purrr,
     vctrs,
     curl, 
     httr2,
     jsonlite,
-    nanoparquet
+    nanoparquet,
+    withr
 URL: https://github.com/torfason/fxconvert, https://torfason.github.io/fxconvert/
 BugReports: https://github.com/torfason/fxconvert/issues
 Suggests: 
+    here,
     testthat (>= 3.0.0)
+Depends: R (>= 3.5.0)
 Config/testthat/edition: 3
