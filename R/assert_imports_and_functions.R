@@ -1,10 +1,16 @@
 
+
+## Per-session global variables are stored in .globals environment
+.globals <- new.env(parent = emptyenv())
+
+#' @importFrom checkmate qassert
 #' @importFrom checkmate assert_flag assert_string
 #'   assert_number assert_int assert_count
+#' @importFrom checkmate assert_date
 #' @importFrom checkmate assert_list assert_class
 NULL
 
-#' @importFrom rlang arg_match
+#' @importFrom rlang arg_match seq2
 NULL
 
 #' Assert that no dots arguments are passed
