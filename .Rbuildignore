@@ -4,6 +4,7 @@
 ^LICENSE\.md$
 ^scratch$
 ^gitpins$
+^.mustashe$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
