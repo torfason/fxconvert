@@ -6,19 +6,23 @@
 \usage{
 fx_init(
   ...,
-  fxsource = "ecb",
+  bank = c("ecb", "cbi", "fed", "xfed"),
   verbose = TRUE,
+  once = FALSE,
   approach = c("incremental", "fresh", "local_refresh", "remove")
 )
 }
 \arguments{
-\item{...}{Additional arguments (not currently used).}
+\item{...}{Reserved. All arguments must be named.}
 
-\item{fxsource}{Character string specifying the source of FX data. Currently,
-only \code{"ecb"} is supported.}
+\item{bank}{Character string specifying the source of FX data. Currently,
+\code{"ecb"} and \code{"cbi"} are supported.}
 
 \item{verbose}{Logical indicating whether to print progress messages.
 Defaults to \code{TRUE}.}
+
+\item{once}{Logical indicating whether to only perform actual initialization
+once per R session. Defaults to \code{FALSE}.}
 
 \item{approach}{Character string specifying how the function should handle
 existing data. Must be one of \code{"incremental"} (default), \code{"fresh"},
@@ -39,15 +43,23 @@ This function ensures that the local FX data store is up to date by:
 \item Loading data into a DuckDB database for efficient querying.
 }
 
-Currently, the function only supports the European Central Bank (\code{"ecb"}) as
-the FX data source.
-
 The approach to updating data is determined by the \code{approach} parameter. This
-can be set to four different options:
+can be currently set to four different options:
 \itemize{
 \item \code{"incremental"}: Downloads missing data while keeping existing files.
 \item \code{"fresh"}: Deletes all local data and downloads everything anew.
 \item \code{"local_refresh"}: Rebuilds the local database without downloading new data.
 \item \code{"remove"}: Deletes all local data and exits without downloading new data.
 }
+
+The different approaches, or actions, are subject to change. In particular
+they should support offline use with appropriate warnings. Potential actions:
+\itemize{
+\item \code{auto}    (equivalent to \code{once}=TRUE, only updates if it has not been updated in this session (but must ensure sitrep is OK))
+\item \code{update}  (equivalent to \code{incremental}, warns on offline, error if no data)
+\item \code{offline} (avoid internet access, no warn on offline unless data is missing)
+\item \code{remove}  (deletes all local data and exits without downloading new data.)
+}
+
+TODO: This should take an options object and also
 }
