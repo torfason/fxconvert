@@ -4,18 +4,21 @@
 #' This function initializes and refreshes the local foreign exchange (FX) data
 #' directory by downloading the necessary data files from the specified remote
 #' server. The function allows different approaches for data management,
-#' including incremental updates, full reinitialization, and local refreshes.
+#' including incremental updates, full re-initialization, and local refreshes.
 #'
 #' @param ... Reserved. All arguments must be named.
 #' @param bank Character string specifying the source of FX data. Currently,
-#'   `"ecb"` and `"cbi"` are supported.
+#'   `"ecb"`, `"cbi"`, and `"fed"` are supported.
 #' @param verbose Logical indicating whether to print progress messages.
 #'   Defaults to `TRUE`.
 #' @param once Logical indicating whether to only perform actual initialization
 #'   once per R session. Defaults to `FALSE`.
-#' @param approach Character string specifying how the function should handle
-#'   existing data. Must be one of `"incremental"` (default), `"fresh"`,
-#'   `"local_refresh"`, `"remove"`. See details.
+#' @param action String specifying which initialization action to take. One of
+#'   `auto`, `update`, `offline`, `full`, `remove`. See details. Replaces
+#'   `approach`.
+#' @param approach String specifying how the function should handle
+#'   existing data. One of `"incremental"` (default), `"fresh"`,
+#'   `"local_refresh"`, `"remove"`. See details. Obsolete, replaced by `action`
 #'
 #' @details
 #' This function ensures that the local FX data store is up to date by:
@@ -36,14 +39,17 @@
 #' - `auto`    (equivalent to `once`=TRUE, only updates if it has not been updated in this session (but must ensure sitrep is OK))
 #' - `update`  (equivalent to older `incremental`, warns on offline, error if no data)
 #' - `offline` (avoid internet access, no warn on offline unless data is missing)
+#' - `full`    (remove and update rolled into one)
 #' - `remove`  (deletes all local data and exits without downloading new data.)
 #'
 #' TODO: This should take an options object and also
 #'
 #' @export
 fx_init <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
+                    action = c("auto", "update", "offline", "full", "remove"),
                     verbose = TRUE,
                     once = FALSE,
+
                     approach = c("incremental", "fresh", "local_refresh", "remove")) {
 
   # Assert parameters
@@ -51,41 +57,47 @@ fx_init <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
   assert_flag(verbose)
   assert_flag(once)
   bank <- arg_match(bank)
+  action <- arg_match(action)
   approach <- arg_match(approach)
 
-  # Abort if once is TRUE and we have already initialized in this session
-  if (once && !is.null(.globals[[bank]]))
+  # Abort if action is "auto" and we have already initialized in this session
+  if (action == "auto" && !is.null(.globals[[bank]]))
     return(invisible(NULL))
 
   # We also abort if sitrep() looks good and we have no internet
   if (!curl::has_internet()) {
     if (fx_sitrep(bank = bank, verbose = verbose)) {
-      # By now, we are assured that sitrep(bank) is true. Warn and exit
+      # By now, we are assured that fx_sitrep(bank) is true. Warn and exit
       .globals[[bank]] <- TRUE
-      cli::cli_warn("No internet, not updating FX data")
+      if (action != "offline") {
+        # Unless offline was explicitly called, we warn that no updates are possible
+        cli::cli_warn("No internet, not updating FX data (but you can use previously downloaded rates)")
+      }
       return(invisible(NULL))
     } else {
-      cli::cli_abort("No internet and no FX data present. Aborting ...")
+      cli::cli_abort("No internet and FX data not valid. Aborting ...")
     }
   }
 
-
-  # Small helper function to only cat if verbose is true
-  # (temporary solution until options and logging are implemented)
-  vcat <- function(...) {
-    if (verbose) cat(...)
+  # Roll-your-own log levels for now
+  if (verbose) {
+    xcat <- base::cat
+    xprint <- base::print
+  } else {
+    xcat <- function(x, ...) {invisible(x)}
+    xprint <- function(x, ...) {invisible(x)}
   }
 
   # Key variables (and options?)
   fxdata_dir <- fx_get_fxdata_dir()
 
-  if (approach == "fresh") {
+  if (action == "full") {
     # Force a full initialization
-    vcat("Removing fxdir to trigger full and fresh reinitialization ...\n")
+    xcat("Removing fxdir to trigger full and fresh reinitialization ...\n")
     unlink(fxdata_dir, recursive = TRUE)
-  } else if (approach == "remove") {
+  } else if (action == "remove") {
     # Just remove the whole fxdata dir and return
-    vcat("Removing fxdir completely and returning. \n",
+    xcat("Removing fxdir completely and returning. \n",
         "Package will not work without reinitializing it.\n")
     unlink(fxdata_dir, recursive = TRUE)
     return(invisible(NULL))
@@ -99,39 +111,49 @@ fx_init <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
   # Prepare the fx_dir for usage as local data store,
   # as well as the subdirectory for the specific source being refreshed
   if (!dir.exists(fxdata_dir)) {
-    vcat("Creating fxdir ...\n")
+    xcat("Creating fxdir ...\n")
     dir.create(fxdata_dir, recursive = TRUE)
   }
   if (!dir.exists(fs::path(fxdata_dir, bank))) {
     dir.create(fs::path(fxdata_dir, bank), recursive = TRUE)
   }
 
-  # Get available dates (first and last) from the remote server
-  l.dates_available <- httr2::request(fxdata_server_url) |>
-    httr2::req_url_path_append(glue::glue("{bank}_meta.json")) |>
-    httr2::req_perform() |>
-    httr2::resp_body_string() |>
+  # # Get available dates (first and last) from the remote server
+  # l.dates_available <- httr2::request(fxdata_server_url) |>
+  #   httr2::req_url_path_append(glue::glue("{bank}_meta.json")) |>
+  #   httr2::req_perform() |>
+  #   httr2::resp_body_string() |>
+  #   jsonlite::fromJSON()
+  # l.dates_available
+
+  # We would like to download the json file to disk
+  l.dates_available <- curl::curl_download(
+        url      = fs::path(fxdata_server_url, glue("meta_{bank}.json")),
+        destfile = fs::path(fxdata_dir, glue("meta_{bank}.json"))) |>
     jsonlite::fromJSON()
-  l.dates_available
+
 
   # Calculate the key date ranges to act on, adding ".parquet" to the end
-  v.date_range_server <- fx_date_seq_lumpy(
-      l.dates_available$first_date_available,
-      l.dates_available$last_date_available)
-  v.range_server <- paste0(bank, "_", v.date_range_server, ".parquet")
-  v.range_local  <- list.files(fs::path(fxdata_dir, bank))
+  v.lumpy_date_range_server <- fx_lump_dates(
+    fx_date_seq(l.dates_available$first_date_available,
+                l.dates_available$last_date_available)) |> unique()
+  # v.date_range_server <- fx_date_seq_lumpy(
+  #     l.dates_available$first_date_available,
+  #     l.dates_available$last_date_available)
+  v.range_server <- glue("{bank}_{v.lumpy_date_range_server}.parquet")
+  v.range_local  <- fs::path(fxdata_dir, bank) |> fs::dir_ls() |> fs::path_file()
   v.range_for_download <- setdiff(v.range_server, v.range_local)
   v.range_for_deletion <- setdiff(v.range_local, v.range_server)
 
   # Download any missing fx data files
   if (length(v.range_for_download) > 0) {
-    vcat("Preparing to download the following files from the server:\n")
-    vcat(fs::path(fxdata_server_url, bank, v.range_for_download), sep = "\n")
+    xcat(glue("Preparing to download {length(v.range_for_download)} files from the server:\n\n"))
+    xcat(fs::path(fxdata_server_url, bank, v.range_for_download), sep = "\n")
 
     d.dlresult <- curl::multi_download(
       fs::path(fxdata_server_url, bank, v.range_for_download),
       fs::path(fxdata_dir, bank, v.range_for_download),
-      progress = TRUE # For now, we always want download status on download
+      progress = verbose # show download status if verbose is set
     )
 
     # Check success, so the code below that will only run if all downloads were successful
@@ -142,52 +164,59 @@ fx_init <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
     # Verify that all downloaded files are uncorrupted parquet files
     tryCatch({
       results <- sapply(fs::path(fxdata_dir, bank, v.range_for_download), nanoparquet::read_parquet)
-      vcat("All fx data downloads are valid parquet files\n")
+      xcat("All fx data downloads are valid parquet files\n")
     }, error = function(e) {
       stop("Some fx data downloads are not valid parquet files")
     })
 
   }
 
-  # Construct a fresh duckdb. We do this either if there were any new parquet
-  # files downloaded or if local_refresh was specified for approach
-  if (length(v.range_for_download) > 0 || approach == "local_refresh") {
-    vcat("Loading parquet files into duckdb database ...\n")
+  # Delete any obsolete files before reading into duckdb.
+  # We now know that downloads were successful, so we can unlink any parts of
+  # the range that are no longer relevant (i.e. individual days after whole
+  # month is available or individual months after the whole year is available).
+  if (length(v.range_for_deletion) > 0) {
+    xcat(glue("Preparing to delete {length(v.range_for_deletion)} outdated local files:\n"))
+    xcat(fs::path(fxdata_dir, bank, v.range_for_deletion), sep = "\n")
+    unlink(
+      fs::path(fxdata_dir, bank, v.range_for_deletion)
+    )
+  }
+
+  # Construct a fresh duckdb. We do this if there were any new parquet files downloaded.
+  if (length(v.range_for_download) > 0) {
+    xcat("Loading parquet files into duckdb database ...\n")
     duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
     if (file.exists(duckdb_file)) {
       file.remove(duckdb_file)
     }
     con <- duckdb::dbConnect(duckdb::duckdb(duckdb_file))
-    on.exit(duckdb::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+    withr::defer(duckdb::dbDisconnect(con, shutdown = TRUE))
 
-    parquet_files_wildcard <- fs::path(fxdata_dir, bank, "*.parquet")
-    res <- duckdb::dbSendQuery(con, paste0("CREATE TABLE fxtable AS SELECT * FROM '",
-                               parquet_files_wildcard,
-                               "' ORDER BY fxdate;"))
-    duckdb::dbClearResult(res)
 
-    # Write a filled version.
-    if (exists("fxdate")) stop("Workaround for check error: fxdate already exists")
-    fxdate <- "Workaround for check error"
-    fxtable_filled <- dplyr::tbl(con, "fxtable") |>
-      dplyr::arrange(fxdate) |>
-      dplyr::collect() |>
-      dplyr::mutate(dplyr::across(-fxdate, ~ fx_vec_fill_gaps(.x))) |>
-      identity()
-    duckdb::dbWriteTable(con, "fxtable_filled", fxtable_filled)
+    # Construct three versions of data (for now)
+    d.fxdata.org <- read_parquet_multi(fs::path(fxdata_dir, bank))
+    if (length(unique(d.fxdata.org$.version.)) > 1 )
+      cli::cli_warn("More than one version in data. This will be an error soon.")
+    d.fxdata.wide <- d.fxdata.org |>
+      dplyr::select(-".version.") |>
+      dplyr::arrange(.data$fxdate)
+    d.fxdata.long <- d.fxdata.wide |>
+      tidyr::pivot_longer(-"fxdate", names_to = "currency", values_to = "rate") |>
+      dplyr::filter(!is.na(.data$rate)) |>
+      dplyr::arrange(.data$fxdate, .data$currency)
+    d.fxdata.filled <- d.fxdata.wide |>
+      dplyr::arrange(.data$fxdate) |>
+      dplyr::mutate(dplyr::across(-"fxdate", ~ fx_vec_fill_gaps(.x)))
+
+    # Write all three versions to the database
+    duckdb::dbWriteTable(con, "fxtable", d.fxdata.wide)
+    duckdb::dbWriteTable(con, "fxtable_filled", d.fxdata.filled)
+    duckdb::dbWriteTable(con, "fxtable_long", d.fxdata.long)
 
   } # End tasks conditional on downloads needed
 
-  # We now know that downloads were successful, so we can unlink any parts of the
-  # range that are no longer relevant (i.e. individual days after whole month is available
-  # or individual months after the whole year is available).
-  if (length(v.range_for_deletion > 0)) {
-    vcat("Preparing to delete the following outdated local files:\n")
-    print(fs::path(fxdata_dir, bank, v.range_for_deletion))
-    unlink(
-      fs::path(fxdata_dir, bank, v.range_for_deletion)
-    )
-  }
+
 
   # Test that state is OK
   if (fx_sitrep(bank = bank, verbose = verbose)) {

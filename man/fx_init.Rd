@@ -7,6 +7,7 @@
 fx_init(
   ...,
   bank = c("ecb", "cbi", "fed", "xfed"),
+  action = c("auto", "update", "offline", "full", "remove"),
   verbose = TRUE,
   once = FALSE,
   approach = c("incremental", "fresh", "local_refresh", "remove")
@@ -16,7 +17,11 @@ fx_init(
 \item{...}{Reserved. All arguments must be named.}
 
 \item{bank}{Character string specifying the source of FX data. Currently,
-\code{"ecb"} and \code{"cbi"} are supported.}
+\code{"ecb"}, \code{"cbi"}, and \code{"fed"} are supported.}
+
+\item{action}{String specifying which initialization action to take. One of
+\code{auto}, \code{update}, \code{offline}, \code{full}, \code{remove}. See details. Replaces
+\code{approach}.}
 
 \item{verbose}{Logical indicating whether to print progress messages.
 Defaults to \code{TRUE}.}
@@ -24,15 +29,15 @@ Defaults to \code{TRUE}.}
 \item{once}{Logical indicating whether to only perform actual initialization
 once per R session. Defaults to \code{FALSE}.}
 
-\item{approach}{Character string specifying how the function should handle
-existing data. Must be one of \code{"incremental"} (default), \code{"fresh"},
-\code{"local_refresh"}, \code{"remove"}. See details.}
+\item{approach}{String specifying how the function should handle
+existing data. One of \code{"incremental"} (default), \code{"fresh"},
+\code{"local_refresh"}, \code{"remove"}. See details. Obsolete, replaced by \code{action}}
 }
 \description{
 This function initializes and refreshes the local foreign exchange (FX) data
 directory by downloading the necessary data files from the specified remote
 server. The function allows different approaches for data management,
-including incremental updates, full reinitialization, and local refreshes.
+including incremental updates, full re-initialization, and local refreshes.
 }
 \details{
 This function ensures that the local FX data store is up to date by:
@@ -58,6 +63,7 @@ they should support offline use with appropriate warnings. Potential actions:
 \item \code{auto}    (equivalent to \code{once}=TRUE, only updates if it has not been updated in this session (but must ensure sitrep is OK))
 \item \code{update}  (equivalent to older \code{incremental}, warns on offline, error if no data)
 \item \code{offline} (avoid internet access, no warn on offline unless data is missing)
+\item \code{full}    (remove and update rolled into one)
 \item \code{remove}  (deletes all local data and exits without downloading new data.)
 }
 

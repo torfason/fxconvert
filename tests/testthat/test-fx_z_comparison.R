@@ -13,7 +13,6 @@ test_that("same results from different banks", {
     cur_to   <- sample(curs_from_2010, 20, replace = TRUE)
   })
 
-  fx_init(verbose = FALSE)
   d.results <- fx_get_multibank(cur_from, cur_to, dates,
                    c("ecb", "cbi", "fed"),
                    .interpolate = TRUE) |>

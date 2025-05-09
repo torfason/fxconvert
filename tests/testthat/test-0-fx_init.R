@@ -1,11 +1,11 @@
 
 test_that("fx_init() works", {
   if (curl::has_internet()) {
-    fx_init(verbose = FALSE) |>
+    fx_init(action = "auto", verbose = FALSE) |>
       expect_silent()
   } else {
-    fx_init(verbose = FALSE) |>
-      expect_warning()
+    fx_init(action = "offline", verbose = FALSE) |>
+      expect_silent()
   }
 })
 
