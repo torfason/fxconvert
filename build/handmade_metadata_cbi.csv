@@ -1,0 +1,94 @@
+ID,GroupID,Symbol,Frequency,RateType,CurrencyNameIS,CurrencyName
+29,7,CNY,D,M,Kínverskt júan,Chinese Yuan
+30,7,RUB,D,M,Rússnesk rúbla,Russian Ruble
+31,7,PLN,D,M,Pólskt slot,Polish Zloty
+32,7,EEK,D,M,Eistnesk króna,Estonian Kroon
+33,7,LVL,D,M,Lettneskt lat,Latvian Lats
+34,7,LTL,D,M,Litháenskt litas,Lithuanian Litas
+35,7,NGN,D,M,Nígerísk næra,Nigerian Naira
+36,7,TWD,D,M,Tævanskur dalur,Taiwan Dollar
+37,7,KRW,D,M,Suðurkóreskt vonn,South Korean Won
+38,7,SRD,D,M,Súrinamskur dalur,Surinamese Dollar
+39,7,AUD,D,M,Ástralíudalur,Australian Dollar
+40,7,NZD,D,M,Ný-Sjálenskur dalur,New Zealand Dollar
+41,7,HKD,D,M,Hong Kong dalur,Hong Kong Dollar
+42,7,HUF,D,M,Ungversk forinta,Hungarian Forint
+43,7,ILS,D,M,Ísraelskur sikill,Israeli Shekel
+44,7,ZAR,D,M,Suður-Afrískt rand,South African Rand
+45,7,SGD,D,M,Singapúrskur dalur,Singapore Dollar
+46,7,MXN,D,M,Mexíkóskur pesi,Mexican Peso
+47,7,MTL,D,M,Maltnesk líra,Maltese Lira
+48,7,TRY,D,M,Tyrknesk líra,Turkish Lira
+49,7,HRK,D,M,Króatísk kúna,Croatian Kuna
+50,7,INR,D,M,Indversk rúpía,Indian Rupee
+51,7,BGN,D,M,Búlgarskt lef,Bulgarian Lev
+52,7,CZK,D,M,Tékknesk króna,Czech Koruna
+53,7,BRL,D,M,Brasilískt ríal,Brazilian Real
+74,7,THB,D,M,Tælenskt bat,Thai Baht
+288,7,JMD,D,M,Jamaískur dalur,Jamaican Dollar
+3503,7,SAR,D,M,Sádi-arabískt ríal,Saudi Riyal
+3504,7,VEF,D,M,Venesúelskur bólivari,Venezuelan Bolívar
+19254,7,KWD,D,M,Kúveiskur denari,Kuwaiti Dinar
+4051,9,ATS,D,B,Austurrískur skildingur,Austrian Schilling
+4052,9,ATS,D,M,Austurrískur skildingur,Austrian Schilling
+4053,9,ATS,D,S,Austurrískur skildingur,Austrian Schilling
+4054,9,USD,D,B,Bandaríkjadalur,US Dollar
+4055,9,USD,D,M,Bandaríkjadalur,US Dollar
+4056,9,USD,D,S,Bandaríkjadalur,US Dollar
+4057,9,BEF,D,B,Belgískur franki,Belgian Franc
+4058,9,BEF,D,M,Belgískur franki,Belgian Franc
+4059,9,BEF,D,S,Belgískur franki,Belgian Franc
+4060,9,DKK,D,B,Dönsk króna,Danish Krone
+4061,9,DKK,D,M,Dönsk króna,Danish Krone
+4062,9,DKK,D,S,Dönsk króna,Danish Krone
+4063,9,EUR,D,B,Evra,Euro
+4064,9,EUR,D,M,Evra,Euro
+4065,9,EUR,D,S,Evra,Euro
+4066,9,FIM,D,B,Finnskt mark,Finnish Markka
+4067,9,FIM,D,M,Finnskt mark,Finnish Markka
+4068,9,FIM,D,S,Finnskt mark,Finnish Markka
+4069,9,FRF,D,B,Franskur franki,French Franc
+4070,9,FRF,D,M,Franskur franki,French Franc
+4071,9,FRF,D,S,Franskur franki,French Franc
+4072,9,GRD,D,B,Grísk drakma,Greek Drachma
+4073,9,GRD,D,M,Grísk drakma,Greek Drachma
+4074,9,GRD,D,S,Grísk drakma,Greek Drachma
+4075,9,NLG,D,B,Hollenskt gyllini,Dutch Guilder
+4076,9,NLG,D,M,Hollenskt gyllini,Dutch Guilder
+4077,9,NLG,D,S,Hollenskt gyllini,Dutch Guilder
+4078,9,IEP,D,B,Írskt pund,Irish Pound
+4079,9,IEP,D,M,Írskt pund,Irish Pound
+4080,9,IEP,D,S,Írskt pund,Irish Pound
+4081,9,ITL,D,B,Ítölsk líra,Italian Lira
+4082,9,ITL,D,M,Ítölsk líra,Italian Lira
+4083,9,ITL,D,S,Ítölsk líra,Italian Lira
+4084,9,JPY,D,B,Japanskt jen,Japanese Yen
+4085,9,JPY,D,M,Japanskt jen,Japanese Yen
+4086,9,JPY,D,S,Japanskt jen,Japanese Yen
+4087,9,CAD,D,B,Kanadadalur,Canadian Dollar
+4088,9,CAD,D,M,Kanadadalur,Canadian Dollar
+4089,9,CAD,D,S,Kanadadalur,Canadian Dollar
+4090,9,NOK,D,B,Norsk króna,Norwegian Krone
+4091,9,NOK,D,M,Norsk króna,Norwegian Krone
+4092,9,NOK,D,S,Norsk króna,Norwegian Krone
+4093,9,PTE,D,B,Portúgalskur skúti,Portuguese Escudo
+4094,9,PTE,D,M,Portúgalskur skúti,Portuguese Escudo
+4095,9,PTE,D,S,Portúgalskur skúti,Portuguese Escudo
+4096,9,XDR,D,B,Sérstök dráttarréttindi- SDR,SDR
+4097,9,XDR,D,M,Sérstök dráttarréttindi- SDR,SDR
+4098,9,XDR,D,S,Sérstök dráttarréttindi- SDR,SDR
+4099,9,ESP,D,B,Spænskur peseti,Spanish Peseta
+4100,9,ESP,D,M,Spænskur peseti,Spanish Peseta
+4101,9,ESP,D,S,Spænskur peseti,Spanish Peseta
+4102,9,GBP,D,B,Sterlingspund,Pound Sterling
+4103,9,GBP,D,M,Sterlingspund,Pound Sterling
+4104,9,GBP,D,S,Sterlingspund,Pound Sterling
+4105,9,CHF,D,B,Svissneskur franki,Swiss Franc
+4106,9,CHF,D,M,Svissneskur franki,Swiss Franc
+4107,9,CHF,D,S,Svissneskur franki,Swiss Franc
+4108,9,SEK,D,B,Sænsk króna,Swedish Krona
+4109,9,SEK,D,M,Sænsk króna,Swedish Krona
+4110,9,SEK,D,S,Sænsk króna,Swedish Krona
+4111,9,DEM,D,B,Þýskt mark,German Mark
+4112,9,DEM,D,M,Þýskt mark,German Mark
+4113,9,DEM,D,S,Þýskt mark,German Mark
