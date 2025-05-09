@@ -29,7 +29,7 @@ Imports:
     purrr,
     vctrs,
     curl, 
-    httr2,
+    tidyr,
     jsonlite,
     nanoparquet,
     withr

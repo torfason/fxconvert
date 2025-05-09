@@ -1,5 +1,4 @@
 
-
 ## Per-session global variables are stored in .globals environment
 .globals <- new.env(parent = emptyenv())
 
@@ -10,9 +9,6 @@
 #' @importFrom checkmate assert_list assert_class
 NULL
 
-#' @importFrom rlang arg_match seq2
-NULL
-
 #' Assert that no dots arguments are passed
 #' @description This is an alias for `rlang::check_dots_empty()`, for
 #'   consistency with other arguments. The function throws an error if any
@@ -20,6 +16,19 @@ NULL
 #' @keywords internal
 assert_dots_empty <- rlang::check_dots_empty
 
+#' @importFrom glue glue
+NULL
+
+#' @importFrom rlang arg_match seq2
+NULL
+
+#' @importFrom lubridate ymd
+#' @export
+lubridate::ymd
+
+#' @importFrom lubridate today
+#' @export
+lubridate::today
 
 # This function is purely a workaround for check errors.
 #
