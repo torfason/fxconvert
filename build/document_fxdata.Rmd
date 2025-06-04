@@ -1,0 +1,125 @@
+---
+title: "FX Data in `parquet` Format"
+output: 
+  md_document:
+    variant: markdown_github
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- ====================================================== -->
+<!-- Generated from .../fxconvert/build/document_fxdata.Rmd -->
+<!-- Please edit that file to update documentation          -->
+<!-- ====================================================== -->
+
+
+```{r calculations, echo = FALSE, include = FALSE}
+
+# Here we go!
+library(here)
+library(conflicted)
+conflicts_prefer(dplyr::filter)
+options(tidyverse.quiet = TRUE)
+library(tidyverse)
+library(glue)
+library(gt)
+
+# Other packages
+library(fxconvert)
+
+# Import some utility functions for fxdata in parquet format
+import::from(utils_build_fxdata.R,
+             double_date, glue_vector,
+             fxdata_fill, fxdata_write_lumpy_parquet, fxdata_write_metadata_json,
+             .directory = here("build"))
+
+# Metadata on currency names
+d.currency_names <- read_csv(here("build", "handmade_metadata_currency_names.csv"),
+                             show_col_types = FALSE)
+
+# Set folder for the generated parquet files
+fxdata_folder <- here("..", "fxdata")
+
+# Read fxdata for all banks into a list
+l.d <- list()
+l.d[["ecb"]]  <- read_parquet_multi(here(fxdata_folder, "ecb")) |>
+  fx_verify_data_version()
+l.d[["cbi"]]  <- read_parquet_multi(here(fxdata_folder, "cbi")) |>
+  fx_verify_data_version()
+l.d[["fed"]] <- read_parquet_multi(here(fxdata_folder, "fed")) |>
+  fx_verify_data_version()
+
+# Map over each bank with access to its name as well
+d.availability <- l.d |> 
+  imap(
+    ~ .x |>
+    mutate(across(-fxdate, \(x){x = as.Date(x); x[!is.na(x)] = fxdate[!is.na(x)]; x})) |>
+    summarize(across(-fxdate, \(x){
+      glue("{min(year(ymd(x)), na.rm=TRUE)}-{max(year(ymd(x)), na.rm=TRUE)}", x = x)})) |>
+    pivot_longer(everything(), names_to = "currency", values_to = .y) 
+  ) |> 
+  reduce(full_join, by = join_by(currency))
+
+# Prepare a gt table with appropriate info and formatting
+d.gt.availability <- d.availability |>
+  # Somewhat complicated arrange() to group currencies by availability and
+  # prioritizing base currencies for each source, and finally alphabetical for
+  # fully matched currencies on other criteria
+  arrange(is.na(ecb), is.na(cbi), is.na(fed), 
+          -str_equal(currency,"eur"), -str_equal(currency,"isk"), -str_equal(currency, "usd"),
+          ecb, cbi, fed,
+          currency) |>
+  rename(symbol = currency) |>
+  mutate(symbol = toupper(symbol)) |>
+  inner_join(d.currency_names, by = join_by(symbol), unmatched = "error") |>
+  select(-country) |>
+  relocate(name, .after=symbol) |>
+  rename_with(snakecase::to_title_case, .cols = c(1:2)) |>
+  rename_with(toupper, .cols = c(3:last_col()))
+  
+# Currencies with availability from 2010 in all three
+#d.gt.availability$Symbol[1:20] |> dput()
+  
+```
+
+
+This repository contains historical foreign exchange rate data in parquet format. 
+The data is in all cases retrieved from official central bank sources. 
+Information about available date ranges is provided in `<bank>_meta.json`.
+
+
+## Central bank data sources
+
+Central banks that make their data available in a format suitable for automatic 
+updating and are used as sources for this data set include:
+
+- `ecb`: European Central Bank, retrieved from:
+  - https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip
+- `cbi`: Central Bank of Iceland, retrieved from:
+  - https://sedlabanki.is/gagnatorg/xml-gogn/
+- `fed`: Federal Reserve Bank of St. Louis, retrieved from:
+  - https://fred.stlouisfed.org/searchresults/?st=spot%20exchange%20rates
+
+
+## Availability 
+
+This table shows the availability of different currencies from the various
+central bank sources. The table values refer to the first and last
+availabilities from each source, but currencies may have gaps within these
+periods for one or more sources due to temporary currency restrictions or other
+reasons.
+
+```{r, echo = FALSE, results = "asis"}
+
+d.gt.availability |> 
+  mutate(across(3:last_col(), ~ifelse(is.na(.), ".", .))) |>
+  knitr::kable(format = "markdown", align = c("l", "l", "c", "c", "c"))
+
+```
+
+
+## Note on quotation methods
+
+Many central banks, such as the European Central Bank (ECB), use an indirect quotation approach, listing exchange rates as foreign currency per 1 EUR (e.g., 1 EUR = 1.20 USD). Other banks, such as the Central Bank of Iceland (CBI), use a direct quotation, expressing rates as ISK per 1 unit of foreign currency (e.g., 1 USD = 130 ISK). When handling exchange rate data, it's important to standardize or document these differing conventions to ensure accuracy. 
+
+The metadata (`<bank>_meta.json`) for each bank includes  the `quotation_method` that each bank uses, (either `indirect` or `direct`). The Federal Reserve Bank of St. Louis (FED) publishes rates in a mix of direct an indirect quotations, they quotes must be converted to a common method before inclusion. The indirect approach is used for the main data set (`fed`), but a data set with the direct approach is available as well (`xfed`).
