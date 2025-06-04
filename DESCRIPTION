@@ -1,6 +1,6 @@
 Package: fxconvert
 Title: Simple and Tidy Currency Conversion
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: 
     person("Magnus Thor", "Torfason", , "m@zulutime.net", role = c("aut", "cre"))
 Description: Convert currencies based on rates obtained directly from central
@@ -32,7 +32,9 @@ Imports:
     tidyr,
     jsonlite,
     nanoparquet,
-    withr
+    waldo,
+    withr,
+    zmisc
 URL: https://github.com/torfason/fxconvert, https://torfason.github.io/fxconvert/
 BugReports: https://github.com/torfason/fxconvert/issues
 Suggests: 

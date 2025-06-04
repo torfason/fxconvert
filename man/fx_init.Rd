@@ -6,17 +6,16 @@
 \usage{
 fx_init(
   ...,
-  bank = c("ecb", "cbi", "fed", "xfed"),
+  banks = c("ecb", "cbi", "fed", "xfed"),
   action = c("auto", "update", "offline", "full", "remove"),
   verbose = TRUE,
-  once = FALSE,
-  approach = c("incremental", "fresh", "local_refresh", "remove")
+  once = FALSE
 )
 }
 \arguments{
 \item{...}{Reserved. All arguments must be named.}
 
-\item{bank}{Character string specifying the source of FX data. Currently,
+\item{banks}{Character string specifying the source of FX data. Currently,
 \code{"ecb"}, \code{"cbi"}, and \code{"fed"} are supported.}
 
 \item{action}{String specifying which initialization action to take. One of
@@ -28,10 +27,6 @@ Defaults to \code{TRUE}.}
 
 \item{once}{Logical indicating whether to only perform actual initialization
 once per R session. Defaults to \code{FALSE}.}
-
-\item{approach}{String specifying how the function should handle
-existing data. One of \code{"incremental"} (default), \code{"fresh"},
-\code{"local_refresh"}, \code{"remove"}. See details. Obsolete, replaced by \code{action}}
 }
 \description{
 This function initializes and refreshes the local foreign exchange (FX) data
