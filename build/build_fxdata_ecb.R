@@ -39,30 +39,24 @@ if (first_date_available == ymd("1999-01-04")) {
 }
 d <- fxdata_fill(d.tidy, first_date_available, last_date_available)
 
-# Set folder for the generated parquet files
+# Write to main directory using improved lumps and automatic compression selection
 fxdata_folder <- here("..", "fxdata")
 bank <- "ecb"
-ecb_parquet_files_old <- fs::dir_ls(here(fxdata_folder, bank))
+glue("Writing {bank} data to {fxdata_folder}") |> print()
+fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
+fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "indirect", new_name_order = TRUE)
 
-# And adding a version column
-ecb_parquet_files_new <- fxdata_write_lumpy_parquet(d, fxdata_folder, bank)
-fxdata_write_metadata_json(d, here("..", "fxdata"), bank = bank, quotation_method = "indirect") |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
-
-# Write out using new approach (in the old dir), in order to have both versions
-ecb_parquet_files_new_better_lumps <- fxdata_write_lumpy_parquet_new(d, fxdata_folder, bank, version = 2L)
-fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "indirect", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
-
-# Write out using new approach (in the new dir)
-fxdata_folder_new <- here("..", "fxdata_new_zstd")
-ecb_parquet_files_new_better_lumps <- fxdata_write_lumpy_parquet_new(d, fxdata_folder_new, bank, version = 2L, compression = "zstd")
-fxdata_write_metadata_json(d, fxdata_folder_new, bank = bank, quotation_method = "indirect", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
+# Write to dev directory using improved lumps and automatic compression selection
+local({
+  fxdata_folder <- here("..", "fxdata_dev")
+  bank <- "ecb"
+  glue("Writing {bank} data to {fxdata_folder}") |> print()
+  fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
+  fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "indirect", new_name_order = TRUE)
+})
 
 # Old files that are no longer relevant must be deleted manually
-for_deletion <- setdiff(ecb_parquet_files_old |> fs::path_file(),
-                        ecb_parquet_files_new |> fs::path_file())
+for_deletion <- fxdata_list_obsolete_files(fxdata_folder, bank)
 if (length(for_deletion) > 0) {
   cat("Found old parquet files that should be deleted:\n")
   cat(for_deletion, sep = "\n")

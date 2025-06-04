@@ -23,8 +23,8 @@ library(glue)
 cat(".")
 
 # Other packages
-library(checkmate)
-rlang::warn("We should not need to load checkmate, zmisc should suffice")
+# library(checkmate)
+# rlang::warn("We should not need to load checkmate, zmisc should suffice")
 library(snakecase)
 library(rappdirs)
 library(readxl)
@@ -55,9 +55,13 @@ cat(".")
 
 # Local utility functions
 import::from(utils_build_fxdata.R,
-             lapply_deep, unbox_non_na, unbox_deep, double_date, mac_alert, glue_vector,
-             fxdata_fill, fxdata_write_metadata_json,
-             fxdata_write_lumpy_parquet, fxdata_write_lumpy_parquet_new,
+             lapply_deep, unbox_non_na, unbox_deep, double_date,
+             mac_alert, glue_vector, fxdata_fill,
+             fxdata_write_metadata_json,
+             fxdata_write_lumpy_parquet,
+             fxdata_write_lumpy_parquet_new,
+             fxdata_write_lumpy_parquet_autocomp,
+             fxdata_list_obsolete_files,
              .directory = here("build"))
 cat(".")
 cat("\n")

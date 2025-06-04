@@ -31,11 +31,17 @@
 
 message("╭ Retrieving and writing FED data!")
 
-age_json <- here("..", "fxdata", "fed_meta.json") |>
-  jsonlite::read_json() |>
-  pluck("last_date_available") |>
-  ymd() |>
-  {\(d) as.numeric(today() - d)}()
+fed_json_file <- here("..", "fxdata", "meta_fed.json")
+
+if (fs::file_exists(fed_json_file)) {
+  age_json <- fed_json_file |>
+    jsonlite::read_json() |>
+    pluck("last_date_available") |>
+    ymd() |>
+    {\(d) as.numeric(today() - d)}()
+} else {
+  age_json <- Inf
+}
 
 if (age_json < 11) {
 
@@ -46,15 +52,16 @@ if (age_json < 11) {
 
 } else {
 
+  # If we end up here, the rates are getting old so we retrieve the most up-to-date data
   glue("Proceeding with FED retrieval, youngest rates are {age_json} days old ...") |>
     message()
 
-  # Rates are getting old, new rates should be available so
-  # we retrieve the most up-to-date data
+# Value to use for data that is generally not refreshed
+# (set to 0 to force refresh of even such data)
+refresh_inf = Inf
 
-# TODO: currency_list_as_csv mixes Swedish Krone and Singapore Dollar
-# https://fred.stlouisfed.org/series/DEXSDUS
-
+# List of currencies and the name of the FED series for each currency
+# (This version is correct for SEK and SGD that were previously mixed up)
 currency_list_as_csv <-
 "currency_code,series_code,description
 BRL,DEXBZUS,Brazilian Reals to USD
@@ -68,9 +75,9 @@ KRW,DEXKOUS,South Korean Won to USD
 MYR,DEXMAUS,Malaysian Ringgit to USD
 MXN,DEXMXUS,Mexican Peso to USD
 NOK,DEXNOUS,Norwegian Krone to USD
-SGD,DEXSDUS,Singapore Dollar to USD
+SGD,DEXSIUS,Singapore Dollar to USD
 ZAR,DEXSFUS,South African Rand to USD
-SEK,DEXSIUS,Swedish Krona to USD
+SEK,DEXSDUS,Swedish Krona to USD
 LKR,DEXSLUS,Sri Lankan Rupee to USD
 CHF,DEXSZUS,Swiss Franc to USD
 TWD,DEXTAUS,Taiwanese Dollar to USD
@@ -100,7 +107,7 @@ cur_tibble_long_from_pin <- function(cur) {
   Sys.sleep(runif(1, min = 0.1, max = 0.2))
   cur_series <- lookup_series_code(cur)
   d.old <- glue("https://fred.stlouisfed.org/graph/fredgraph.csv?id={cur_series}&coed=2024-12-31") |>
-    pin(refresh_hours = Inf) |> read_csv(show_col_types = FALSE) |>
+    pin(refresh_hours = refresh_inf) |> read_csv(show_col_types = FALSE) |>
     pkgcond::suppress_messages("pin\\(\\) found recent version, using it ...")
   d.new <- glue("https://fred.stlouisfed.org/graph/fredgraph.csv?id={cur_series}&cosd=2025-01-01") |>
     pin(refresh_hours = 12) |> read_csv(show_col_types = FALSE) |>
@@ -127,7 +134,7 @@ last_date_available  <- max(d.tidy$fxdate)
 first_date_available <- min(d.tidy$fxdate)
 if (first_date_available == ymd("1971-01-04")) {
   # The first days of 1 were in fact only a weekend so they should be NA-filled
-  first_date_available <- ymd("1971-01-01")
+  first_date_available <- ymd("1970-01-01")
 }
 
 d <- fxdata_fill(d.tidy, first_date_available, last_date_available)
@@ -152,57 +159,41 @@ d.fed.indirect <- d |>
 d.fed.direct <- d |>
   mutate(across(all_of(v.indirect), div_1_x))
 
-# Set folder for the generated parquet files
+
+# Write to main directory using improved lumps and automatic compression selection
 fxdata_folder     <- here("..", "fxdata")
-
-# Fetch the old (existing) files
-fed_parquet_files_old  <- fs::dir_ls(here(fxdata_folder, "fed"))
-xfed_parquet_files_old <- fs::dir_ls(here(fxdata_folder, "xfed"))
-
-
-# Old approach (Default files are the indirect version)
-fed_parquet_files_new  <- fxdata_write_lumpy_parquet(d.fed.indirect, here("..", "fxdata"), bank = "fed")
-xfed_parquet_files_new <- fxdata_write_lumpy_parquet(d.fed.direct,   here("..", "fxdata"), bank = "xfed")
+glue("Writing fed/xfed data to {fxdata_folder}") |> print()
+fxdata_write_lumpy_parquet_autocomp(d.fed.indirect, fxdata_folder, bank = "fed",  version = 2L)
+fxdata_write_lumpy_parquet_autocomp(d.fed.direct,   fxdata_folder, bank = "xfed", version = 2L)
 #
-fxdata_write_metadata_json(d.fed.indirect, here("..", "fxdata"), bank = "fed", quotation_method = "indirect") |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
-fxdata_write_metadata_json(d.fed.direct, here("..", "fxdata"), bank = "xfed", quotation_method = "direct") |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
+fxdata_write_metadata_json(d.fed.indirect, fxdata_folder, bank = "fed",  quotation_method = "indirect", new_name_order = TRUE)
+fxdata_write_metadata_json(d.fed.direct,   fxdata_folder, bank = "xfed", quotation_method = "indirect", new_name_order = TRUE)
 
-# Write out using new approach in old location
-fed_parquet_files_new_better_lumps  <- fxdata_write_lumpy_parquet_new(d.fed.indirect, fxdata_folder, bank = "fed",  version = 2L)
-xfed_parquet_files_new_better_lumps <- fxdata_write_lumpy_parquet_new(d.fed.direct,   fxdata_folder, bank = "xfed", version = 2L)
-#
-fxdata_write_metadata_json(d.fed.indirect, fxdata_folder, bank = "fed",  quotation_method = "indirect", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
-fxdata_write_metadata_json(d.fed.direct,   fxdata_folder, bank = "xfed", quotation_method = "indirect", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
 
-# Write out using new approach in new location
-fxdata_folder_new <- here("..", "fxdata_new")
-fed_parquet_files_new_better_lumps  <- fxdata_write_lumpy_parquet_new(d.fed.indirect, fxdata_folder_new, bank = "fed",  version = 2L)
-xfed_parquet_files_new_better_lumps <- fxdata_write_lumpy_parquet_new(d.fed.direct,   fxdata_folder_new, bank = "xfed", version = 2L)
-#
-fxdata_write_metadata_json(d.fed.indirect, fxdata_folder_new, bank = "fed",  quotation_method = "indirect", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
-fxdata_write_metadata_json(d.fed.direct,   fxdata_folder_new, bank = "xfed", quotation_method = "indirect", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
+# Write to main directory using improved lumps and automatic compression selection
+local({
+  fxdata_folder     <- here("..", "fxdata")
+  glue("Writing fed/xfed data to {fxdata_folder}") |> print()
+  fxdata_write_lumpy_parquet_autocomp(d.fed.indirect, fxdata_folder, bank = "fed",  version = 2L)
+  fxdata_write_lumpy_parquet_autocomp(d.fed.direct,   fxdata_folder, bank = "xfed", version = 2L)
+  #
+  fxdata_write_metadata_json(d.fed.indirect, fxdata_folder, bank = "fed",  quotation_method = "indirect", new_name_order = TRUE)
+  fxdata_write_metadata_json(d.fed.direct,   fxdata_folder, bank = "xfed", quotation_method = "indirect", new_name_order = TRUE)
+})
 
 
 # Old files that are no longer relevant must be deleted manually
-for_deletion <- setdiff(fed_parquet_files_old |> fs::path_file(),
-                        fed_parquet_files_new |> fs::path_file())
+for_deletion <- fxdata_list_obsolete_files(fxdata_folder, "fed")
 if (length(for_deletion) > 0) {
   cat("Found old parquet files that should be deleted:\n")
   cat(for_deletion, sep = "\n")
 }
 
 # Old files that are no longer relevant must be deleted manually
-xfed_for_deletion <- setdiff(xfed_parquet_files_old |> fs::path_file(),
-                        xfed_parquet_files_new |> fs::path_file())
-if (length(xfed_for_deletion) > 0) {
+for_deletion <- fxdata_list_obsolete_files(fxdata_folder, "xfed")
+if (length(for_deletion) > 0) {
   cat("Found old parquet files that should be deleted:\n")
-  cat(xfed_for_deletion, sep = "\n")
+  cat(for_deletion, sep = "\n")
 }
 
 message("╰ Finished retrieving and writing FED data!")

@@ -23,8 +23,16 @@
 #
 # @examples
 #   letters |> glue_vector("Letters include {.} and {LETTERS}")
-glue_vector <- function(., template = "{.}", ...) {
-  glue::glue(template, . = ., ...)
+glue_vector <- function(., template = "{.}", ...,
+      .sep = "", .envir = parent.frame(), .open = "{", .close = "}",
+      .na = "NA", .null = character(), .comment = "#", .literal = FALSE,
+      .transformer = glue::identity_transformer, .trim = TRUE) {
+  zmisc::assert_dots_empty()
+  d.point <- tibble::tibble(. = .)
+  glue::glue_data(template, .x = d.point,
+          .sep = .sep, .envir = .envir, .open = .open, .close = .close,
+          .na = .na, .null = .null, .comment = .comment, .literal = .literal,
+          .transformer = .transformer, .trim = .trim)
 }
 
 
@@ -39,6 +47,7 @@ fxdata_fill <- function(d, first_date, last_date) {
     arrange(fxdate)
   result
 }
+
 
 # Write json metadata for an fxdata tibble
 #
@@ -84,7 +93,7 @@ fxdata_write_metadata_json <- function(d, fxdata_folder, bank, quotation_method,
 # underlying dates, only lumping months and years.
 #
 # @examples
-#   fxdata_write_chunky_parquet(d, here("..", "fxdata"), "ecb")
+#   fxdata_write_lumpy_parquet(d, here("..", "fxdata"), "ecb")
 fxdata_write_lumpy_parquet <- function(d, fxdata_folder, bank) {
 
   fxdata_bank_folder <- file.path(fxdata_folder, bank)
@@ -122,7 +131,7 @@ fxdata_write_lumpy_parquet <- function(d, fxdata_folder, bank) {
 
       # File exists, parquet internals may differ, but data should match
       # Use double_date() to ensure dates use double rather than integer internally
-      d.from_file <- read_parquet(filename, options = pq_options) |>
+      d.from_file <- nanoparquet::read_parquet(filename, options = pq_options) |>
         mutate(fxdate = fxdate |> double_date())
       waldo_result <- waldo::compare(d.from_file, d.cur_range)
       if (length(waldo_result) > 0) {
@@ -163,7 +172,7 @@ fxdata_write_lumpy_parquet <- function(d, fxdata_folder, bank) {
 # to be set from outside the function.
 #
 # @examples
-#   fxdata_write_chunky_parquet(d, here("..", "fxdata"), "ecb")
+#   fxdata_write_lumpy_parquet(d, here("..", "fxdata"), "ecb")
 fxdata_write_lumpy_parquet_new <- function(d, fxdata_folder, bank, version, compression = "gzip") {
 
   # Verify inputs, ensure version is an integer
@@ -218,7 +227,7 @@ fxdata_write_lumpy_parquet_new <- function(d, fxdata_folder, bank, version, comp
 
       # File exists, parquet internals may differ, but data should match
       # Use double_date() to ensure dates use double rather than integer internally
-      d.from_file <- read_parquet(cur_filename, options = pq_options) |>
+      d.from_file <- nanoparquet::read_parquet(cur_filename, options = pq_options) |>
         mutate(fxdate = fxdate |> double_date())
 
       # Ignore version mismatches for now
@@ -252,6 +261,115 @@ fxdata_write_lumpy_parquet_new <- function(d, fxdata_folder, bank, version, comp
 
   # Return a vector of the file names that were written to (or skipped if existing)
   d.nest$filename
+}
+
+
+# Write fxdata tibble to a set of lumpy parquet files
+#
+# Writes d, a *date-filled* fxdata tibble of correct format in a
+# lumpy parquet format, with the name of the bank given in bank.
+#
+# NOTE, this version:
+#   - utilizes the improved (decaday) approach to lumping the dates,
+#   - takes the `version` parameter
+#   - takes a `compression_types` parameter that specifies which compression
+#     types it should try
+#
+# @examples
+#   fxdata_write_lumpy_parquet(d, here("..", "fxdata"), "ecb")
+fxdata_write_lumpy_parquet_autocomp <- function(d, fxdata_folder, bank, version,
+                  compression_types = c("gzip", "snappy", "uncompressed")) {
+
+  # Verify inputs, ensure version is an integer
+  assert_tibble(d)
+  assert_string(fxdata_folder)
+  assert_string(bank)
+  assert_inumber(version)   # typeof() == "integer" and length == 1
+  assert_character(compression_types)
+
+  # Determine fxdata bank folder and create if it does not exist
+  fxdata_bank_folder <- file.path(fxdata_folder, bank)
+  if (!fs::dir_exists(fxdata_bank_folder)) {
+    cli::cli_warn("Bank directory missing, attempting to create it (recursively): {fxdata_bank_folder}")
+    fs::dir_create(fxdata_bank_folder)
+  }
+
+  # Separate into immutable ranges and write out files to each range
+  lumpy_date_range <- fx_lump_dates(d$fxdate, lump_from = "millennium", lump_to = "decaday")
+
+  # Prepare tibble to loop through, after adding a version column
+  d.nest <- d |>
+    mutate(.version. = version, .after = fxdate) |>
+    mutate(fxdate_lump = lumpy_date_range, .before = 0) |>
+    tidyr::nest(.by = fxdate_lump) |>
+    mutate(filename = file.path(fxdata_bank_folder, paste0(bank, "_", fxdate_lump, ".parquet")))
+
+
+  ## NEW APPROACH HERE
+  # Loop through the date range, check if each lump exists, and write it if not
+  written_file_count <- 0
+  for (i in seq2(1, nrow(d.nest))) {
+
+    # Prepare the exact tibble to write for this range
+    d.cur_range <- d.nest$data[[i]]
+    cur_filename <- d.nest$filename[i]
+    cur_lump <- d.nest$fxdate_lump[i]
+
+    # Output current lump
+    cat(cur_lump, "...")
+
+    # Write (or skip) file
+    wrote_file <- write_parquet_vx(d.cur_range, cur_filename, verbose = TRUE)
+    if (wrote_file) {
+      # New file, note it! (using \n so the output gets preserved)
+      written_file_count <- written_file_count + 1
+      cat(" wrote new file ...\n")
+    } else {
+      cat(" found file ...\r")
+    }
+  }
+
+  # Report number of written files, with a side effect of
+  # overwriting any transient messages from the loop.
+  cat("Wrote:", written_file_count, "parquet files            \n")
+  #cat("Ignored:", version_ignored_count, "version mismatches \n")
+
+  # Return a vector of the file names that were written to (or skipped if existing)
+  d.nest$filename
+}
+
+# Helper to list obsolete parquet files, using the json metadata and
+# fx_lump_dates() to determine which files should exist and compare it
+# against the files that are actually found in the given fxdata_folder+bank
+fxdata_list_obsolete_files <- function(fxdata_folder, bank) {
+
+  # Read json to determine available range
+  l.meta <- jsonlite::read_json(fs::path(fxdata_folder, glue("meta_{bank}.json")))
+
+  # Determine which files exist
+  files_found <-
+    fs::dir_ls(here(fxdata_folder, bank)) |>
+    fs::path_file()
+
+  # Determine which files should exist
+  files_expected <-
+    fx_date_seq(l.meta$first_date_available, l.meta$last_date_available) |>
+    fx_lump_dates() |>
+    unique() |>
+    glue_vector("{bank}_{.}.parquet") |>
+    unclass()
+
+  # Determine which files are missing
+  files_missing  <- setdiff(files_expected, files_found)
+  if (length(files_missing) > 0) {
+    cli::cli_abort(c("Some parquet files are missing for {bank}:", "{files_missing}"))
+  }
+
+  # Determine which files are obsolete
+  files_obsolete <- setdiff(files_found, files_expected)
+
+  # And return ...
+  files_obsolete
 }
 
 

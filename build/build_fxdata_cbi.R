@@ -10,6 +10,10 @@ message("╭ Retrieving and writing CBI data!")
 #   Row-bind all four data_frames
 #   Widen using cbi_widen_mid()
 
+# Value to use for data that is generally not refreshed
+# (set to 0 to force refresh of even such data)
+refresh_inf = Inf
+
 # GroupID is 7 or 9
 cbi_url <- function(GroupId, DagsFra, DagsTil = NULL, Type = "csv") {
   if (is.null(DagsTil)) {
@@ -129,11 +133,11 @@ cat("Refresh Hours:", refresh_hours, "\n")
 
 # Fetch each of the four segments
 d.7.1900_full <- cbi_url(7, "1900-01-01", "2024-12-31") |>
-  pin(refresh_hours = Inf) |>
+  pin(refresh_hours = refresh_inf) |>
   pkgcond::suppress_messages("pin\\(\\) found recent version, using it ...") |>
   cbi_read_csv()
 d.9.1900_full <- cbi_url(9, "1900-01-01", "2024-12-31") |>
-  pin(refresh_hours = Inf) |>
+  pin(refresh_hours = refresh_inf) |>
   pkgcond::suppress_messages("pin\\(\\) found recent version, using it ...") |>
   cbi_read_csv()
 d.7.current <- cbi_url(7, "2025-01-01") |>
@@ -172,27 +176,24 @@ d
 fxdata_folder <- here("..", "fxdata")
 bank = "cbi"
 
-cbi_parquet_files_old <- fs::dir_ls(here(fxdata_folder, bank))
+# Write to main directory using improved lumps and automatic compression selection
+fxdata_folder <- here("..", "fxdata")
+bank <- "cbi"
+glue("Writing {bank} data to {fxdata_folder}") |> print()
+fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
+fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct", new_name_order = TRUE)
 
-# Write out using old approach
-cbi_parquet_files_new <- fxdata_write_lumpy_parquet(d, fxdata_folder, bank = bank)
-fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct") |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
-
-# Write out using new approach (in the new dir)
-fxdata_folder_new <- here("..", "fxdata_new")
-cbi_parquet_files_new_better_lumps <- fxdata_write_lumpy_parquet_new(d, fxdata_folder_new, bank, version = 2L)
-fxdata_write_metadata_json(d, fxdata_folder_new, bank = bank, quotation_method = "direct", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
-
-# Write out using new approach (in the old dir)
-cbi_parquet_files_new_better_lumps <- fxdata_write_lumpy_parquet_new(d, fxdata_folder, bank, version = 2L)
-fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct", new_name_order = TRUE) |>
-  read_lines() |> str_view() # |> cat(sep = "\n")
+# Write to dev directory using improved lumps and automatic compression selection
+local({
+  fxdata_folder <- here("..", "fxdata_dev")
+  bank <- "cbi"
+  glue("Writing {bank} data to {fxdata_folder}") |> print()
+  fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
+  fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct", new_name_order = TRUE)
+})
 
 # Old files that are no longer relevant must be deleted manually
-for_deletion <- setdiff(cbi_parquet_files_old |> fs::path_file(),
-                        cbi_parquet_files_new |> fs::path_file())
+for_deletion <- fxdata_list_obsolete_files(fxdata_folder, bank)
 if (length(for_deletion) > 0) {
   cat("Found old parquet files that should be deleted:\n")
   cat(for_deletion, sep = "\n")
