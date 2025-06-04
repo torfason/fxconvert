@@ -5,8 +5,8 @@
 #' @importFrom checkmate qassert
 #' @importFrom checkmate assert_flag assert_string
 #'   assert_number assert_int assert_count
-#' @importFrom checkmate assert_date
-#' @importFrom checkmate assert_list assert_class
+#' @importFrom checkmate assert_date assert_character
+#' @importFrom checkmate assert_list assert_data_frame assert_class
 NULL
 
 #' Assert that no dots arguments are passed

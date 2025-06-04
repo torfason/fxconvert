@@ -78,6 +78,128 @@ random_date <- function(n,
 }
 
 
+#' Convert an Object to a Double-Preserved Date
+#'
+#' This function converts an object to a numeric double representation
+#' while preserving the "Date" class. It first unclasses the input,
+#' converts it to `double`, and then reassigns the `"Date"` class.
+#'
+#' Used to ensure that dates read using `nanoparquet` are identical to
+#' dates read from the same file using `arrow`
+#'
+#' @param x An object that can be coerced into a date-like numeric format.
+#' @return A `Date` object stored as a `double`.
+#'
+#' @examples
+#'   d <- 10957L
+#'   class(d) <- "Date" # d is now "2000-01-01"
+#'   double_date(d)  # Returns the same date but stored as a double
+#'
+#' @keywords internal
+#' @export
+double_date <- function(x) {
+
+  # Apply recursively to lists
+  if (is.list(x)) {
+    x[] <- lapply(x[], double_date)
+    return(x)
+  }
+
+  if (lubridate::is.Date(x)) {
+    x <- x |> unclass() |> as.double()
+    class(x) <- "Date"
+  }
+
+  x
+}
+
+
+#' Writes and verifies parquet file with maximum compression
+#'
+#' @description
+#' For ma**X**imum compression, the function writes `length(compression_types)`
+#' versions of parquet file with maximum compression options for each
+#' compression type to a temporary location, before moving the maximally
+#' compressed file to the target file.
+#'
+#' For **V**erification, the function checks if the target file exists, if it
+#' does it is read to verify that its contents equal `x` (a mismatch is an
+#' error). If the target file does not exist, it is written (see above) and
+#' `TRUE` returned , then re-read to ensure a match (again, a mismatch is an
+#' error).
+#'
+#' The function returns `TRUE` if the file is written, and `FALSE` if a matching
+#' file already exists.
+#'
+#' @param x `tibble` with data to write to file.
+#' @param file `string` with path name to write.
+#' @param compression_types `character` with list of compression methods to try.
+#' @param verbose `flag` determining verbosity level
+#' @return `TRUE` if data was written to file, `FALSE` if a file existed that
+#'   contained the exact same data as `x` (if a file with different data was
+#'   found, an error is thrown).
+#'
+#' @keywords internal
+#' @export
+write_parquet_vx <- function(x, file, ...,
+                             compression_types = c("gzip", "snappy", "uncompressed"),
+                             verbose = FALSE) {
+
+  # Verify inputs
+  assert_dots_empty()
+  assert_data_frame(x)
+  assert_string(file)
+  assert_character(compression_types)
+  assert_flag(verbose)
+
+  # Create a temporary directory to work with
+  temp_dir <- fs::file_temp()
+  fs::dir_create(temp_dir)
+  withr::defer(fs::dir_delete(temp_dir))
+
+  file_existed <- fs::file_exists(file)
+  if (!file_existed) {
+
+    # Write out file for each compression type
+    cr <- compression_types |> sapply(\(cmpr){
+      cmpr_level <- zmisc::recode_tilde(cmpr, "gzip" ~ 9, "zstd" ~ 22, .default = NA)
+      filename <- fs::path(temp_dir, glue("{cmpr}.parquet"))
+      x |> nanoparquet::write_parquet(file = filename,
+                   compression = cmpr,
+                   options = nanoparquet::parquet_options(write_minmax_values = FALSE,
+                           write_arrow_metadata = FALSE,
+                           compression_level = cmpr_level))
+      fs::file_size(filename)
+    }, USE.NAMES = FALSE)
+
+    # Print all file sizes if verbose
+    if (verbose)
+      cr |> tibble::enframe() |> dplyr::mutate(name = fs::path_file(.data$name)) |> print()
+
+    # Find the smallest and move it
+    smallest <- cr[cr==min(cr)][1]
+    fs::file_move(names(smallest), file)
+
+  }
+
+  # A file now exists at the target location, verify contents or error out
+  xr <- nanoparquet::read_parquet(file)
+  waldo_result <- waldo::compare(
+    x |> tibble::as_tibble() |> double_date(),
+    xr |> tibble::as_tibble() |> double_date()
+  )
+
+  if (length(waldo_result) > 0) {
+    print(waldo_result)
+    rlang::abort("Disk and memory data do not match")
+    cli::cli_abort("Different data in old and new snapshots")
+  }
+
+  # We return TRUE if we wrote (if file did NOT exist)
+  return(invisible(unname(!file_existed)))
+}
+
+
 #' Read and Combine Multiple Parquet Files Using nanoparquet
 #'
 #' Reads one or more Parquet files from specified directories, glob patterns,
@@ -123,6 +245,43 @@ read_parquet_multi <- function(path, ..., add_file_column = FALSE) {
 
   # Bind the rows
   l.frames |> dplyr::bind_rows()
+}
+
+
+#' Verify and clean FX data versioning
+#'
+#' Checks the `.version.` column of an FX dataset. Issues a warning if data is
+#' unversioned or contains multiple versions. Removes the `.version.` column
+#' before returning the data.
+#'
+#' @param d A data frame with a `.version.` column.
+#'
+#' @return The input data frame with the `.version.` column removed.
+#'
+#' @keywords internal
+#' @export
+fx_verify_data_version <- function(d) {
+  if (is.null(d$.version.)) {
+    # Legacy unversioned data
+    cli::cli_warn(c("FX data version mismatch",
+                    "!" = "Old and unversioned FX data detected",
+                    "i" = 'It is recommended that you run
+                           {.run [fx_init("full")](fxconvert::fx_init(action = "full"))}
+                           for a full initialization, to refresh all FX data from the online repository.
+                           If this persists after a full initialization, please file an issue.'))
+  } else {
+    if (!length(unique(d$.version.)) == 1) {
+      # More that one version found
+      cli::cli_warn(c("FX data version mismatch",
+                      "!" = "More than one version of FX data detected",
+                      "i" = 'It is recommended that you run
+                           {.run [fx_init("full")](fxconvert::fx_init(action = "full"))}
+                           for a full initialization, to refresh all FX data from the online repository.
+                           If this persists after a full initialization, please file an issue.'))
+    }
+  }
+  d$.version. <- NULL
+  d
 }
 
 

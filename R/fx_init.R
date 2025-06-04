@@ -7,7 +7,7 @@
 #' including incremental updates, full re-initialization, and local refreshes.
 #'
 #' @param ... Reserved. All arguments must be named.
-#' @param bank Character string specifying the source of FX data. Currently,
+#' @param banks Character string specifying the source of FX data. Currently,
 #'   `"ecb"`, `"cbi"`, and `"fed"` are supported.
 #' @param verbose Logical indicating whether to print progress messages.
 #'   Defaults to `TRUE`.
@@ -16,9 +16,6 @@
 #' @param action String specifying which initialization action to take. One of
 #'   `auto`, `update`, `offline`, `full`, `remove`. See details. Replaces
 #'   `approach`.
-#' @param approach String specifying how the function should handle
-#'   existing data. One of `"incremental"` (default), `"fresh"`,
-#'   `"local_refresh"`, `"remove"`. See details. Obsolete, replaced by `action`
 #'
 #' @details
 #' This function ensures that the local FX data store is up to date by:
@@ -45,7 +42,31 @@
 #' TODO: This should take an options object and also
 #'
 #' @export
-fx_init <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
+fx_init <- function(..., banks = c("ecb", "cbi", "fed", "xfed"),
+                   action = c("auto", "update", "offline", "full", "remove"),
+                   verbose = TRUE,
+                   once = FALSE) {
+
+  # Assert parameters
+  assert_dots_empty()
+  assert_flag(verbose)
+  assert_flag(once)
+  zmisc::assert_character(banks)
+  action <- arg_match(action)
+
+  for (bank in banks) {
+    fx_init_single(bank = bank, action = action, verbose = verbose, once = once)
+  }
+}
+
+#' Initialize fxdata only for a single bank
+#'
+#' @param approach String specifying how the function should handle
+#'   existing data. One of `"incremental"` (default), `"fresh"`,
+#'   `"local_refresh"`, `"remove"`. See details. Obsolete, replaced by `action`
+#'
+#' @noRd
+fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
                     action = c("auto", "update", "offline", "full", "remove"),
                     verbose = TRUE,
                     once = FALSE,
@@ -99,13 +120,15 @@ fx_init <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
     # Just remove the whole fxdata dir and return
     xcat("Removing fxdir completely and returning. \n",
         "Package will not work without reinitializing it.\n")
+    .globals[[bank]] <- NULL
     unlink(fxdata_dir, recursive = TRUE)
     return(invisible(NULL))
   }
 
-  # Download all parquet files from the server.
-  # The url should point to the fxdata directory on the server
-  # (temporary approach until options are implemented)
+  # Download all parquet files from the server. The url should point to the fxdata
+  # directory on the server (temporary approach until options are implemented)
+  # (Can be swapped to another version when developing new data versions)
+  #fxdata_server_url <- "https://dev.vestur.net/fxdata/"
   fxdata_server_url <- "https://github.com/torfason/fxdata/raw/refs/heads/main/"
 
   # Prepare the fx_dir for usage as local data store,
@@ -196,8 +219,11 @@ fx_init <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
 
     # Construct three versions of data (for now)
     d.fxdata.org <- read_parquet_multi(fs::path(fxdata_dir, bank))
-    if (length(unique(d.fxdata.org$.version.)) > 1 )
+    if (length(unique(d.fxdata.org$.version.)) != 1 ) {
       cli::cli_warn("More than one version in data. This will be an error soon.")
+    } else {
+      xcat(glue("fxdata version: {unique(d.fxdata.org$.version.)}\n\n"))
+    }
     d.fxdata.wide <- d.fxdata.org |>
       dplyr::select(-".version.") |>
       dplyr::arrange(.data$fxdate)

@@ -23,7 +23,7 @@
 fx_get <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
 
   # Initialize once per session before getting
-  fx_init(bank = bank, once = TRUE, verbose = TRUE)
+  fx_init(banks = bank, once = TRUE, verbose = TRUE)
 
   # Ensure vectors are recyclable to the same length
   args <- vctrs::vec_recycle_common(
