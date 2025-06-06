@@ -162,7 +162,6 @@ d.fed.direct <- d |>
 
 # Write to main directory using improved lumps and automatic compression selection
 fxdata_folder     <- here("..", "fxdata")
-glue("Writing fed/xfed data to {fxdata_folder}") |> print()
 fxdata_write_lumpy_parquet_autocomp(d.fed.indirect, fxdata_folder, bank = "fed",  version = 2L)
 fxdata_write_lumpy_parquet_autocomp(d.fed.direct,   fxdata_folder, bank = "xfed", version = 2L)
 #
@@ -171,15 +170,16 @@ fxdata_write_metadata_json(d.fed.direct,   fxdata_folder, bank = "xfed", quotati
 
 
 # Write to main directory using improved lumps and automatic compression selection
-local({
-  fxdata_folder     <- here("..", "fxdata")
-  glue("Writing fed/xfed data to {fxdata_folder}") |> print()
-  fxdata_write_lumpy_parquet_autocomp(d.fed.indirect, fxdata_folder, bank = "fed",  version = 2L)
-  fxdata_write_lumpy_parquet_autocomp(d.fed.direct,   fxdata_folder, bank = "xfed", version = 2L)
-  #
-  fxdata_write_metadata_json(d.fed.indirect, fxdata_folder, bank = "fed",  quotation_method = "indirect", new_name_order = TRUE)
-  fxdata_write_metadata_json(d.fed.direct,   fxdata_folder, bank = "xfed", quotation_method = "indirect", new_name_order = TRUE)
-})
+if (dev_data_generation) {
+  local ({
+    fxdata_folder     <- here("..", "fxdata")
+    fxdata_write_lumpy_parquet_autocomp(d.fed.indirect, fxdata_folder, bank = "fed",  version = 2L)
+    fxdata_write_lumpy_parquet_autocomp(d.fed.direct,   fxdata_folder, bank = "xfed", version = 2L)
+    #
+    fxdata_write_metadata_json(d.fed.indirect, fxdata_folder, bank = "fed",  quotation_method = "indirect", new_name_order = TRUE)
+    fxdata_write_metadata_json(d.fed.direct,   fxdata_folder, bank = "xfed", quotation_method = "indirect", new_name_order = TRUE)
+  })
+}
 
 
 # Old files that are no longer relevant must be deleted manually

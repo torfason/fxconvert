@@ -179,18 +179,18 @@ bank = "cbi"
 # Write to main directory using improved lumps and automatic compression selection
 fxdata_folder <- here("..", "fxdata")
 bank <- "cbi"
-glue("Writing {bank} data to {fxdata_folder}") |> print()
 fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
 fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct", new_name_order = TRUE)
 
 # Write to dev directory using improved lumps and automatic compression selection
-local({
-  fxdata_folder <- here("..", "fxdata_dev")
-  bank <- "cbi"
-  glue("Writing {bank} data to {fxdata_folder}") |> print()
-  fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
-  fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct", new_name_order = TRUE)
-})
+if (dev_data_generation) {
+  local ({
+    fxdata_folder <- here("..", "fxdata_dev")
+    bank <- "cbi"
+    fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
+    fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct", new_name_order = TRUE)
+  })
+}
 
 # Old files that are no longer relevant must be deleted manually
 for_deletion <- fxdata_list_obsolete_files(fxdata_folder, bank)

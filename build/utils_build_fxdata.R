@@ -64,8 +64,9 @@ fxdata_write_metadata_json <- function(d, fxdata_folder, bank, quotation_method,
     mutate_all(as.character) |>
     as.vector() # Strip class and attributes
   l.ranges_for_json |>
-    with(paste0("Date Range: ", first_date_available, " -- ", last_date_available, "\n")) |>
-    cat()
+    with(glue("Wrote json: {bank} | ",
+        fs::path_rel(fxdata_folder, start = here::here()),
+        " | {first_date_available} – {last_date_available}")) |> print()
 
   # Add additional fields to json
   l.ranges_for_json$quotation_method = quotation_method
@@ -319,7 +320,7 @@ fxdata_write_lumpy_parquet_autocomp <- function(d, fxdata_folder, bank, version,
     cat(cur_lump, "...")
 
     # Write (or skip) file
-    wrote_file <- write_parquet_vx(d.cur_range, cur_filename, verbose = TRUE)
+    wrote_file <- write_parquet_vx(d.cur_range, cur_filename, verbose = FALSE)
     if (wrote_file) {
       # New file, note it! (using \n so the output gets preserved)
       written_file_count <- written_file_count + 1
@@ -331,7 +332,9 @@ fxdata_write_lumpy_parquet_autocomp <- function(d, fxdata_folder, bank, version,
 
   # Report number of written files, with a side effect of
   # overwriting any transient messages from the loop.
-  cat("Wrote:", written_file_count, "parquet files            \n")
+  glue("Wrote prqt: {bank} | ",
+      fs::path_rel(fxdata_folder, start = here::here()),
+      " | {written_file_count} files") |> print()
   #cat("Ignored:", version_ignored_count, "version mismatches \n")
 
   # Return a vector of the file names that were written to (or skipped if existing)

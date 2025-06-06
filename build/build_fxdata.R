@@ -5,8 +5,6 @@ library(here)
 # Use conflicted for conflict resolution
 library(conflicted)
 conflicts_prefer(dplyr::filter)
-conflicts_prefer(zmisc::qassert)
-conflict_prefer_all("zmisc", "checkmate", quiet = TRUE)
 
 # Some of the following are a bit slow, so we show a basic progress
 cat("Loading packages: .")
@@ -71,6 +69,9 @@ cat("\n")
 err_to_warning <- function(e) {
   warn("Error retrieving data from one bank, continuing with next bank")
 }
+
+# Define global variables related to how data is built
+dev_data_generation = FALSE
 
 # = = = = = = = = = = = = = =
 # Retrieve and write ECB data:
