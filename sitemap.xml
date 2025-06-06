@@ -6,16 +6,24 @@
 <url><loc>https://torfason.github.io/fxconvert/index.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/assert_dots_empty.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/assert_fxoptions.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/double_date.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_available_range.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_date_seq.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_date_seq_lumpy.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_get.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_get_fxdata_dir.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/fx_get_multibank.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_get_single.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_init.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/fx_lump_dates.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_options.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_sitrep.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/fx_vec_fill_gaps.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/fx_verify_data_version.html</loc></url>
 <url><loc>https://torfason.github.io/fxconvert/reference/index.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/random_date.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/read_parquet_multi.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/reexports.html</loc></url>
+<url><loc>https://torfason.github.io/fxconvert/reference/write_parquet_vx.html</loc></url>
 </urlset>
 
