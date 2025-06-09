@@ -27,15 +27,18 @@ contained the exact same data as \code{x} (if a file with different data was
 found, an error is thrown).
 }
 \description{
-For ma\strong{X}imum compression, the function writes \code{length(compressions)} versions
-of parquet file with maximum compression options for each compression type to
-a temporary location, before moving the maximally compressed file to the
-target file.
+For ma\strong{X}imum compression, the function writes \code{length(compression_types)}
+versions of parquet file with maximum compression options for each
+compression type to a temporary location, before moving the maximally
+compressed file to the target file.
 
 For \strong{V}erification, the function checks if the target file exists, if it
-does it is read to verify that its contents equal \code{x}, writing nothing and
-returning \code{FALSE} if they are equal (a mismatch is an error). If the target
-file does not exist, it is written (see above) and \code{TRUE} returned , then
-re-read to ensure a match (again, a mismatch is an error).
+does it is read to verify that its contents equal \code{x} (a mismatch is an
+error). If the target file does not exist, it is written (see above) and
+\code{TRUE} returned , then re-read to ensure a match (again, a mismatch is an
+error).
+
+The function returns \code{TRUE} if the file is written, and \code{FALSE} if a matching
+file already exists.
 }
 \keyword{internal}

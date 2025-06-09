@@ -13,7 +13,7 @@ test_that("fx_get_single() works", {
     expect_equal(138, tolerance = 1)
 
   fx_get_single(character(), "isk", "2024-11-11") |>
-    expect_error("length.*from")
+    expect_error("from.* Must have length 1")
 })
 
 test_that("fx_get() works for valid input", {
