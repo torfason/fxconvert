@@ -4,10 +4,10 @@
 \alias{fx_available_range}
 \title{Retrieve Available Date Range for Foreign Exchange Data}
 \usage{
-fx_available_range(fxsource = "ecb", where = c("local", "server"))
+fx_available_range(bank = "ecb", where = c("local", "server"))
 }
 \arguments{
-\item{fxsource}{Character string specifying the source of the exchange rate data.
+\item{bank}{Character string specifying the source of the exchange rate data.
 The default source is "ecb" (European Central Bank).}
 
 \item{where}{Character vector indicating the data location. The default
@@ -24,7 +24,7 @@ in a specified source. Currently, this function only supports retrieving data
 ranges from local sources.
 }
 \examples{
-#fx_available_range(fxsource = "ecb", where = "local")
+#fx_available_range(bank = "ecb", where = "local")
 
 }
 \keyword{internal}

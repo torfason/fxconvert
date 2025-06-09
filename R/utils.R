@@ -33,6 +33,32 @@ fx_get_fxdata_dir <- function(..., options = fx_options()) {
 }
 
 
+fx_duck_local <- function(bank, ...,
+                          read_only = TRUE,
+                          options = fx_options(),
+                          envir = parent.frame()) {
+
+  # Check input
+  assert_choice(bank, c("ecb", "cbi", "fed", "xfed"))
+  assert_dots_empty()
+  assert_fxoptions(options)
+  assert_environment(envir)
+
+  # Create a conn (we follow conventions in https://r.duckdb.org/ docs and use conn rather than con )
+  dbfile <- fs::path(fx_get_fxdata_dir(), glue("{bank}.duckdb"))
+
+  if (!fs::file_exists(dbfile)) {
+    cli::cli_abort(c("Database file does not exist. You probably need to run fx_init()",
+                     i = "<{dbfile}>"))
+  }
+
+  conn   <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = read_only))
+  withr::defer(duckdb::dbDisconnect(conn, shutdown = TRUE), envir = envir)
+  conn
+}
+
+
+
 #' Generate a random date between two dates
 #'
 #' Returns a single random date between `start_date` and `end_date`. If `seed` is

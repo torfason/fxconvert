@@ -7,6 +7,7 @@
 #'   assert_number assert_int assert_count
 #' @importFrom checkmate assert_date assert_character
 #' @importFrom checkmate assert_list assert_data_frame assert_class
+#' @importFrom zmisc assert_choice assert_environment
 NULL
 
 #' Assert that no dots arguments are passed

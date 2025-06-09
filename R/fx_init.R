@@ -209,12 +209,13 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
   # Construct a fresh duckdb. We do this if there were any new parquet files downloaded.
   if (length(v.range_for_download) > 0) {
     xcat("Loading parquet files into duckdb database ...\n")
-    duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
-    if (file.exists(duckdb_file)) {
-      file.remove(duckdb_file)
-    }
-    con <- duckdb::dbConnect(duckdb::duckdb(duckdb_file))
-    withr::defer(duckdb::dbDisconnect(con, shutdown = TRUE))
+    # duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
+    # if (file.exists(duckdb_file)) {
+    #   file.remove(duckdb_file)
+    # }
+    # conn <- duckdb::dbConnect(duckdb::duckdb(duckdb_file))
+    # withr::defer(duckdb::dbDisconnect(conn, shutdown = TRUE))
+    conn <- fx_duck_local(bank, read_only = FALSE)
 
 
     # Construct three versions of data (for now)
@@ -236,9 +237,9 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
       dplyr::mutate(dplyr::across(-"fxdate", ~ fx_vec_fill_gaps(.x)))
 
     # Write all three versions to the database
-    duckdb::dbWriteTable(con, "fxtable", d.fxdata.wide)
-    duckdb::dbWriteTable(con, "fxtable_filled", d.fxdata.filled)
-    duckdb::dbWriteTable(con, "fxtable_long", d.fxdata.long)
+    duckdb::dbWriteTable(conn, "fxtable", d.fxdata.wide)
+    duckdb::dbWriteTable(conn, "fxtable_filled", d.fxdata.filled)
+    duckdb::dbWriteTable(conn, "fxtable_long", d.fxdata.long)
 
   } # End tasks conditional on downloads needed
 

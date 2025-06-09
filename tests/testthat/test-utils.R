@@ -16,3 +16,18 @@ test_that("fx_get_data_dir works", {
     expect_error("path_has_parent.*not TRUE")
 
 })
+
+test_that("fx_duck_local() connection is auto-closed", {
+
+  inner_test <- function() {
+    conn <- fx_duck_local("ecb")
+
+    # Should be valid inside the function
+    expect_true(duckdb::dbIsValid(conn))
+    conn
+  }
+  conn <- inner_test()
+
+  # After function is exidted, conn should be closed
+  expect_false(duckdb::dbIsValid(conn))
+})

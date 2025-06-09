@@ -28,7 +28,7 @@ fx_sitrep <- function(bank = c("ecb", "cbi", "fed", "xfed"), verbose = TRUE) {
     xprint <- function(x, ...) {invisible(x)}
   }
 
-  # Open con, prepare dbplyr table, and register con for closing
+  # Open conn, prepare dbplyr table, and register conn for closing
   fxdata_dir <- fx_get_fxdata_dir()
   duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
 
@@ -38,26 +38,27 @@ fx_sitrep <- function(bank = c("ecb", "cbi", "fed", "xfed"), verbose = TRUE) {
   xcat("fxdir:    ", fxdata_dir, "\n")
   xcat("dbfile:   ", duckdb_file, "\n")
 
-  # Abort if DB is not found
-  if (!fs::file_exists(duckdb_file)) {
-    xcat("ALERT:     <dbfile> does not exist. You probably need to run fx_init()\n")
-    return(invisible(FALSE))
-  }
-
-  # Connect to db inside with_output_sink() because it outputs a newline
-  withr::with_output_sink(nullfile(), {
-    con <- duckdb::dbConnect(duckdb::duckdb(duckdb_file, read_only = TRUE))
-    withr::defer(duckdb::dbDisconnect(con, shutdown = TRUE))
-  })
+  # # Abort if DB is not found
+  # if (!fs::file_exists(duckdb_file)) {
+  #   xcat("ALERT:     <dbfile> does not exist. You probably need to run fx_init()\n")
+  #   return(invisible(FALSE))
+  # }
+  #
+  # # Connect to db inside with_output_sink() because it outputs a newline
+  # withr::with_output_sink(nullfile(), {
+  #   conn <- duckdb::dbConnect(duckdb::duckdb(duckdb_file, read_only = TRUE))
+  #   withr::defer(duckdb::dbDisconnect(conn, shutdown = TRUE))
+  # })
+  conn <- fx_duck_local(bank)
 
   # Create a table and select the dates.
-  fxtable <- dplyr::tbl(con, "fxtable")
+  fxtable <- dplyr::tbl(conn, "fxtable")
   available_dates <- fxtable |>
     dplyr::select("fxdate") |>
     dplyr::collect() |>
     purrr::pluck("fxdate")
 
-  xcat("tables:   ", duckdb::dbListTables(con), "\n")
+  xcat("tables:   ", duckdb::dbListTables(conn), "\n")
   xcat("start:     ")
   available_dates |> utils::head(3) |> format() |> c("...") |> xprint()
   xcat("end:       ")

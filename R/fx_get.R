@@ -66,12 +66,13 @@ fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FA
     fxtable_name = "fxtable"
   }
 
-  # Open con, prepare dbplyr table, and register con for closing
-  fxdata_dir <- fx_get_fxdata_dir()
-  duckdb_file <- file.path(fxdata_dir, paste0(fxsource, ".duckdb"))
-  con <- duckdb::dbConnect(duckdb::duckdb(duckdb_file, read_only = TRUE))
-  on.exit(duckdb::dbDisconnect(con, shutdown = TRUE), add = TRUE)
-  fxtable <- dplyr::tbl(con, fxtable_name)
+  # Open conn, prepare dbplyr table, and register conn for closing
+  # fxdata_dir <- fx_get_fxdata_dir()
+  # duckdb_file <- file.path(fxdata_dir, paste0(bank, ".duckdb"))
+  # conn <- duckdb::dbConnect(duckdb::duckdb(duckdb_file, read_only = TRUE))
+  # on.exit(duckdb::dbDisconnect(conn, shutdown = TRUE), add = TRUE)
+  conn <- fx_duck_local(bank)
+  fxtable <- dplyr::tbl(conn, fxtable_name)
 
   fxdate_param <- fxdate
   v.rates <- fxtable |>
