@@ -49,15 +49,17 @@ fx_get <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
 #' @keywords internal
 fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
 
-  stopifnot(length(from) == 1)
-  stopifnot(length(to) == 1)
-  stopifnot(length(fxdate) == 1)
-  stopifnot(length(.interpolate) == 1)
+  # Verify arguments
+  assert_string(from)
+  assert_string(to)
+  assert_string(bank)
+  assert_flag(.interpolate)
 
   # Verify and preprocess parameters
-  from     <- tolower(from)
-  to       <- tolower(to)
-  fxsource <- tolower(bank)
+  from   <- tolower(from)
+  to     <- tolower(to)
+  fxdate <- ymd(fxdate)
+  bank   <- tolower(bank)
 
   # Choose whether to used the filled version of the table
   if (.interpolate) {
