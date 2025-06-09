@@ -90,10 +90,30 @@ fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FA
     return(1)
   }
 
-  # R does not throw an error
-  if (length(v.rates) != 2)
-    stop("length(d.rates) != 2, probably date requested was not in range or one of the rates was not found\n",
-          "(", from, ", ", to, ", ", fxdate, ")")
+  # R does not throw an error if one of the rates is not found
+  #
+  if (length(v.rates) != 2) {
+
+    # When .interpolate is true, we do special handling to get the latest date available
+    # (often, this case means that a future date or date after last fx fetch was requested)
+    if (.interpolate) {
+      # Calculate the latest fxdate available
+      latest_fxdate <- fxtable  |>
+        dplyr::filter(fxdate == max(fxdate, na.rm = TRUE)) |>
+        dplyr::collect() |> purrr::pluck("fxdate")
+      if (ymd(fxdate) > ymd(latest_fxdate)) {
+        cli::cli_warn("Requested fxdate later than available data, retry with latest available date")
+        return(fx_get_single(from = from, to = to, fxdate = latest_fxdate, bank = bank, .interpolate = .interpolate))
+      } else {
+        cli::cli_abort(c("Failed with .interpolate == TRUE",
+            i = "Arguments: [ from: {from} | to: {to} | fxdate: {fxdate} | length(d.rates): {length(v.rates)} ] "))
+      }
+
+    } else {
+      cli::cli_abort(c("length(v.rates) != 2, probably date not in range or rate not in data",
+            i = "Arguments: [ from: {from} | to: {to} | fxdate: {fxdate} | length(d.rates): {length(v.rates)} ]"))
+    }
+  }
 
   # We error out on NA until further notice
   # Different handling depending on whether the source quotes direct or indirect,
@@ -103,7 +123,7 @@ fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FA
   } else if (bank %in% c("cbi", "xfed")) {
     result = v.rates[1] / v.rates[2]
   } else {
-    cli::cli_abort(glue::glue("Unknown source: '{bank}'"))
+    cli::cli_abort("Unknown source: '{bank}'")
   }
   if (is.na(result))
     stop("fx rate is NA, probably a weekend and .interpolate is false: ", "(", from, ", ", to, ", ", fxdate, ")")
