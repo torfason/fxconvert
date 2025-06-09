@@ -161,7 +161,8 @@ date_seq_lumpy_org <- function(from_date, to_date, lump_decades = FALSE) {
     result <- v.separated_ranges
 
     # Identify full years (entries with 4 digits) and group them into decades when possible.
-    is_year <- stringr::str_detect(result, "^\\d{4}$")
+    #is_year <- stringr::str_detect(result, "^\\d{4}$")
+    is_year <- grepl("^\\d{4}$", result)
     full_years <- as.integer(result[is_year])
     year_indices <- which(is_year)
     remove_idx <- integer(0)

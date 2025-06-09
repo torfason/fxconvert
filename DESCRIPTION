@@ -24,7 +24,6 @@ Imports:
     lubridate,
     rlang,
     rappdirs,
-    stringr,
     tibble,
     purrr,
     vctrs,
