@@ -209,10 +209,10 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
   # Construct a fresh duckdb. We do this if there were any new parquet files downloaded.
   if (length(v.range_for_download) > 0) {
     xcat("Loading parquet files into duckdb database ...\n")
-    # duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
-    # if (file.exists(duckdb_file)) {
-    #   file.remove(duckdb_file)
-    # }
+    duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
+    if (file.exists(duckdb_file)) {
+      file.remove(duckdb_file)
+    }
     # conn <- duckdb::dbConnect(duckdb::duckdb(duckdb_file))
     # withr::defer(duckdb::dbDisconnect(conn, shutdown = TRUE))
     conn <- fx_duck_local(bank, read_only = FALSE)
