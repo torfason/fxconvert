@@ -32,32 +32,83 @@ fx_get_fxdata_dir <- function(..., options = fx_options()) {
   ws_dir
 }
 
-
+# Return a connection that will get handled after it has been used
 fx_duck_local <- function(bank, ...,
                           read_only = TRUE,
+                          wipe_db = FALSE,
                           options = fx_options(),
                           envir = parent.frame()) {
 
   # Check input
   assert_choice(bank, c("ecb", "cbi", "fed", "xfed"))
   assert_dots_empty()
+  assert_flag(read_only)
+  assert_flag(wipe_db)
   assert_fxoptions(options)
   assert_environment(envir)
 
-  # Create a conn (we follow conventions in https://r.duckdb.org/ docs and use conn rather than con )
-  dbfile <- fs::path(fx_get_fxdata_dir(), glue("{bank}.duckdb"))
+  # Ensure dbstate is initialized with defaults if running for first time
+  .globals$dbstate                    <- .globals$dbstate %||% new_environment()
+  .globals$dbstate[[bank]]            <- .globals$dbstate[[bank]] %||% new_environment()
+  .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count %||% 0
 
-  if (!fs::file_exists(dbfile)) {
-    cli::cli_abort(c("Database file does not exist. You probably need to run fx_init()",
-                     i = "<{dbfile}>"))
-  }
+  dbdir  <- fx_get_fxdata_dir()
+  dbfile <- fs::path(dbdir, glue("{bank}.duckdb"))
+  if (wipe_db && !read_only) {
 
-  conn   <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = read_only))
-  withr::defer(duckdb::dbDisconnect(conn, shutdown = TRUE), envir = envir)
+    # Check outstanding connections, error if there are any
+    if (!isTRUE(.globals$dbstate[[bank]]$conn_count == 0)) {
+      cli::cli_abort(c("Cannot prepare read/write db connection if there are outstanding connections",
+                       i = "There currently exist {(.globals$dbstate[[bank]]$conn_count)}"))
+    }
+
+    # We want to wipe db and make file system ready for a new one
+    # The following should work regardless of a db exists or if we are fully fresh
+    fs::dir_create(dbdir, recurse = TRUE)
+    if (fs::file_exists(dbfile))
+      fs::file_delete(dbfile)
+  } else if (wipe_db) {
+    cli::cli_abort("Attempting to wipe db but read_only was specified")
+  } else if (!read_only)
+    cli::cli_abort("Read/write connections are only allowed if wiping database is specified")
+
+  # Verification of state seems to be OK, we
+  #   - Create a conn (we follow conventions in https://r.duckdb.org/ docs and use conn rather than con )
+  #   - Update number of connections outstanding
+  #   - Add a defer to reverse both actions
+  conn <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = read_only))
+  .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count + 1
+  #cli::cli_inform("fx_duck_local(): {(.globals$dbstate[[bank]]$conn_count)} conns exist")
+
+  withr::defer({
+    duckdb::dbDisconnect(conn, shutdown = TRUE)
+    .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count - 1
+    #cli::cli_inform("fx_duck_local(): {(.globals$dbstate[[bank]]$conn_count)} conns exist (deferred run)")
+    }, envir = envir)
   conn
 }
 
+# Local implementation of DBI::dbGetQuery, because DBI is not directly imported
+db_get_query <- function(conn, statement, ..., n = -1L) {
 
+  # Query results and immediately defer a clearing operation
+  rs <- duckdb::dbSendQuery(conn, statement, ...)
+  withr::defer(duckdb::dbClearResult(rs))
+
+  # Return all relevant results
+  duckdb::dbFetch(rs, n = n, ...)
+}
+
+# Local implementation of DBI::dbExecute, because DBI is not directly imported
+db_execute <- function(conn, statement, ...) {
+
+  # Send statement for DB for execution, and immediately defer clearing operation
+  rs <- duckdb::dbSendQuery(conn, statement, ...)
+  withr::defer(duckdb::dbClearResult(rs))
+
+  # Return the number of rows affected
+  duckdb::dbGetRowsAffected(rs)
+}
 
 #' Generate a random date between two dates
 #'
@@ -309,5 +360,7 @@ fx_verify_data_version <- function(d) {
   d$.version. <- NULL
   d
 }
+
+
 
 
