@@ -8,7 +8,7 @@
 #'
 #' @rdname fx_get
 #' @export
-fx_convert <- function(amount, from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
+fx_convert <- function(amount, from, to, fxdate = today(), bank = "ecb", ..., .interpolate = FALSE) {
 
   # Validate and recycle
   args <- vctrs::vec_recycle_common(

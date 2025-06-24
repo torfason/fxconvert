@@ -5,9 +5,17 @@
 \alias{fx_get}
 \title{Retrieve exchange rates or convert amounts between currencies}
 \usage{
-fx_convert(amount, from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE)
+fx_convert(
+  amount,
+  from,
+  to,
+  fxdate = today(),
+  bank = "ecb",
+  ...,
+  .interpolate = FALSE
+)
 
-fx_get(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE)
+fx_get(from, to, fxdate = today(), bank = "ecb", ..., .interpolate = FALSE)
 }
 \arguments{
 \item{amount}{Numeric; the amount of money to convert from the \code{from} currency

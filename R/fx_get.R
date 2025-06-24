@@ -20,7 +20,7 @@
 #'   function may not always give the expected value for well-known currency
 #'   pairs that are always quoted in the same direction.
 #' @export
-fx_get <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
+fx_get <- function(from, to, fxdate = today(), bank = "ecb", ..., .interpolate = FALSE) {
 
   # Verify arguments
   assert_character(from)
