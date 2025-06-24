@@ -22,11 +22,82 @@
 #' @export
 fx_get <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
 
+  # Verify arguments
+  assert_character(from)
+  assert_character(to)
+  assert_string(bank)
+  assert_flag(.interpolate)
+
   # Initialize once per session before getting
-  fx_init(banks = bank, once = TRUE, verbose = TRUE)
+  fx_init(banks = bank, once = TRUE, verbose = FALSE)
+
+  method <- "duckdb_asof_sorted_onecall"
+  if (method == "duckdb_asof_sorted") {
+    fx_get_impl_join(from, to, fxdate, bank, .interpolate = .interpolate, join_engine = "duckdb", asof = TRUE, table_name = "fxtable_long_cur_date")
+  } else if (method == "duckdb_asof_sorted_onecall") {
+    fx_get_impl_join(from, to, fxdate, bank, .interpolate = .interpolate, join_engine = "duckdb_onecall", asof = TRUE, table_name = "fxtable_long_cur_date")
+  }  else if (method == "join_dplyr") {
+    fx_get_impl_join(from, to, fxdate, bank, .interpolate = .interpolate, join_engine = "dplyr")
+  } else if (method == "join_duckdb") {
+    fx_get_impl_join(from, to, fxdate, bank, .interpolate = .interpolate, join_engine = "duckdb" )
+  } else if (method == "apply") {
+    fx_get_impl_apply(from, to, fxdate, bank, .interpolate = .interpolate)
+  } else {
+    rlang::abort("Wrong method selected for fx_get_impl...()")
+  }
+}
+
+
+# Private method implementing fx_get() by relying on baserate joins
+fx_get_impl_join <- function(from, to, fxdate, bank, .interpolate, join_engine, asof, table_name = "fxtable_long") {
+
+  # Get baserates for to and from
+  if (join_engine == "duckdb_onecall") {
+
+    # Recycle parameters and get length of the recycled vectors
+    d.recycled <- tibble::tibble(from, to, fxdate)
+    n_recycled <- nrow(d.recycled)
+
+    # Call baserates function once with to and from concatenated together in
+    # order to get both baserate results with a single db call, then split
+    # them up here
+    d.from_to <- fx_baserates_join_duckdb(c(d.recycled$from, d.recycled$to), rep(d.recycled$fxdate, 2), bank, asof = asof, table_name = table_name)
+    d.from <- d.from_to[seq2(1, n_recycled),]
+    d.to   <- d.from_to[seq2(n_recycled+1, n_recycled*2),]
+
+  } else if (join_engine == "dplyr") {
+    d.from <- fx_baserates_join_dplyr(from, fxdate, bank, table_name = table_name)
+    d.to   <- fx_baserates_join_dplyr(to, fxdate, bank, table_name = table_name)
+  } else if (join_engine == "duckdb") {
+    d.from <- fx_baserates_join_duckdb(from, fxdate, bank, asof = asof, table_name = table_name)
+    d.to   <- fx_baserates_join_duckdb(to, fxdate, bank, asof = asof, table_name = table_name)
+  } else {
+    rlang::abort("Invalid join_engine: {join_engine}")
+  }
+
+  # Check oldest rates and warn if older than max_age_warn
+  # (if no rows were returned we treat the max as zero)
+  oldest_rates <- ifelse(n_recycled>0, max(c(d.from$age, d.to$age)), 0)
+  if (oldest_rates > 7) cli::cli_warn("Oldest rates used for conversion were {oldest_rates} days old.")
+
+  # Calculate bilateral rates and return
+  # TODO: This should be read from json and stored in .globals
+  if (bank %in% c("ecb", "fed")) {
+    result = d.to$rate / d.from$rate
+  } else if (bank %in% c("cbi", "xfed")) {
+    result = d.from$rate / d.to$rate
+  } else {
+    cli::cli_abort("Unknown source: '{bank}'")
+  }
+  result
+}
+
+
+# Private method implementing fx_get() by looking up single rows and mapping
+fx_get_impl_apply <- function(from, to, fxdate, bank, .interpolate) {
 
   # Ensure vectors are recyclable to the same length
-  args <- vctrs::vec_recycle_common(
+  args <- dplyr::tibble(
     from = from,
     to = to,
     fxdate = fxdate
@@ -39,8 +110,6 @@ fx_get <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
     .ptype = double()
   )
 }
-
-
 
 #' This function connects to a DuckDB database containing foreign exchange rate data,
 #' retrieves exchange rates between two specified currencies for a given date,
@@ -132,6 +201,7 @@ fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FA
   result
 }
 
+
 #' Fetch FX rates from multiple banks
 #'
 #' Retrieves exchange rates for a given currency pair and date from one or more
@@ -173,7 +243,99 @@ fx_get_multibank <- function(from, to, fxdate, bank = c("ecb", "cbi", "fed"), ..
   result
 }
 
+# Implementation to construct baserates table with a dplyr join
+fx_baserates_join_dplyr <- function(currency, fxdate, bank = "ecb", ..., table_name, options = fx_options()) {
 
+  # Verify arguments
+  assert_character(currency)
+  assert_string(bank)
+
+  # Verify and preprocess parameters
+  currency   <- tolower(currency)
+  fxdate <- ymd(fxdate)
+  bank   <- tolower(bank)
+
+  # Ensure vectors are recyclable to the same length
+  d.fxrequest <- dplyr::tibble(
+    currency = currency,
+    fxdate = fxdate
+  )
+
+  conn <- fx_duck_local(bank)
+  duckdb::duckdb_register(conn, "fxrequest", d.fxrequest)
+
+  tbl.fxdata    <- dplyr::tbl(conn, table_name)
+  tbl.fxrequest <- dplyr::tbl(conn, "fxrequest")
+
+  d.fxdata <- tbl.fxdata |> dplyr::collect()
+
+  # https://www.tidyverse.org/blog/2023/01/dplyr-1-1-0-joins/
+  dplyr::left_join(d.fxrequest, d.fxdata, dplyr::join_by(currency, closest(x$fxdate >= y$fxdate))) |>
+    dplyr::mutate(age = as.numeric(fxdate.x - fxdate.y)) |>
+    dplyr::select(currency, rate, age)
+
+}
+
+
+# Implementation to construct baserates table with a duckdb join
+fx_baserates_join_duckdb <- function(currency, fxdate, bank = "ecb", ..., asof, table_name, options = fx_options()) {
+
+  # Verify arguments
+  assert_character(currency)
+  assert_string(bank)
+
+  # Verify and preprocess parameters
+  currency   <- tolower(currency)
+  fxdate <- ymd(fxdate)
+  bank   <- tolower(bank)
+
+  # Ensure vectors are recyclable to the same length
+  d.fxrequest <- dplyr::tibble(
+    currency = currency,
+    fxdate = fxdate
+  ) |> dplyr::mutate (row_number = dplyr::row_number())
+
+  conn <- fx_duck_local(bank)
+  duckdb::duckdb_register(conn, "fxrequest", d.fxrequest)
+  withr::defer(duckdb::duckdb_unregister(conn, "fxrequest"))
+
+  # TODO: Wrap in db_get_query(conn, statement) { ... }
+  if (asof) {
+    res <- duckdb::dbSendQuery(conn, glue("
+      SELECT
+        rq.currency,
+        rq.fxdate,
+        fxd.rate,
+        rq.fxdate - fxd.fxdate AS age
+      FROM fxrequest AS rq
+      ASOF LEFT JOIN {table_name} AS fxd
+        ON rq.currency = fxd.currency
+        AND rq.fxdate >= fxd.fxdate
+      ORDER BY rq.row_number
+    "))
+  } else {
+    res <- duckdb::dbSendQuery(conn, glue("
+      SELECT
+        rq.currency,
+        fxd.rate,
+        rq.fxdate - fxd.fxdate AS age
+      FROM fxrequest AS rq
+      LEFT JOIN {table_name} AS fxd
+        ON rq.currency = fxd.currency
+        AND fxd.fxdate <= rq.fxdate
+      QUALIFY fxd.fxdate = MAX(fxd.fxdate) OVER (PARTITION BY rq.fxdate, rq.currency)
+      ORDER BY rq.row_number
+    "))
+  }
+
+  # Defer clearing results (not needed once we use db_get_query() for the query)
+  withr::defer(duckdb::dbClearResult(res))
+
+  # Get a tibble and return it
+  data <- duckdb::dbFetch(res) |> dplyr::as_tibble()
+  data
+
+}
 
 
 

@@ -34,6 +34,10 @@ test_that("fx_get() converts correctly from currency to itself", {
           "Package not initialized? (workspace directory missing)")
 
   fx_get("ISK", "ISK", "2024-04-02") |>
+    expect_equal(1)
+
+  skip("With join implementation, we no longer expect warnings on converting to same currencty")
+  fx_get("ISK", "ISK", "2024-04-02") |>
     expect_equal(1) |>
     expect_warning("Looks like you ae converting to same currency.*")
 
@@ -47,14 +51,16 @@ test_that("fx_get() handles scalar or zero-length inputs correctly", {
   to <- "JPY"
   fxdate <- as.Date("2024-01-01", )
 
-  fx_get(from, to, fxdate) |>
-    expect_error("weekend .* .interpolate is false")
-
   fx_get(from, to, fxdate, .interpolate = TRUE) |>
     expect_equal(131, tolerance = 1)
 
   fx_get(character(), "isk", "2024-11-11") |>
     expect_equal(numeric())
+
+  skip("With join implementation, we no longer expect errors on weekends - we rely on max_age_warn and max_age_err")
+  fx_get(from, to, fxdate) |>
+    expect_error("weekend .* .interpolate is false")
+
 })
 
 test_that("fx_get throws an error for non-recyclable inputs", {
@@ -66,7 +72,7 @@ test_that("fx_get throws an error for non-recyclable inputs", {
   fxdate <- as.Date(c("2023-01-01", "2023-01-02"))
 
   fx_get(from, to, fxdate) |>
-    expect_error("Can't recycle")
+    expect_error("Tibble columns must have compatible sizes")
 })
 
 test_that("fx_get() handles input with recycling", {

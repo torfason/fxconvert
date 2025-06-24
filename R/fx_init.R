@@ -141,15 +141,8 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
     dir.create(fs::path(fxdata_dir, bank), recursive = TRUE)
   }
 
-  # # Get available dates (first and last) from the remote server
-  # l.dates_available <- httr2::request(fxdata_server_url) |>
-  #   httr2::req_url_path_append(glue::glue("{bank}_meta.json")) |>
-  #   httr2::req_perform() |>
-  #   httr2::resp_body_string() |>
-  #   jsonlite::fromJSON()
-  # l.dates_available
-
-  # We would like to download the json file to disk
+  # Get available dates (first and last) from the remote server
+  # We save them to disk before reading
   l.dates_available <- curl::curl_download(
         url      = fs::path(fxdata_server_url, glue("meta_{bank}.json")),
         destfile = fs::path(fxdata_dir, glue("meta_{bank}.json"))) |>
@@ -209,37 +202,51 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
   # Construct a fresh duckdb. We do this if there were any new parquet files downloaded.
   if (length(v.range_for_download) > 0) {
     xcat("Loading parquet files into duckdb database ...\n")
-    duckdb_file <- fs::path(fxdata_dir, paste0(bank, ".duckdb"))
-    if (file.exists(duckdb_file)) {
-      file.remove(duckdb_file)
-    }
-    # conn <- duckdb::dbConnect(duckdb::duckdb(duckdb_file))
-    # withr::defer(duckdb::dbDisconnect(conn, shutdown = TRUE))
-    conn <- fx_duck_local(bank, read_only = FALSE)
 
+    # Run the following in a local context, ensures that connection is freed right after
+    local({
+      # Get connections
+      conn <- fx_duck_local(bank, read_only = FALSE, wipe_db = TRUE)
 
-    # Construct three versions of data (for now)
-    d.fxdata.org <- read_parquet_multi(fs::path(fxdata_dir, bank))
-    if (length(unique(d.fxdata.org$.version.)) != 1 ) {
-      cli::cli_warn("More than one version in data. This will be an error soon.")
-    } else {
-      xcat(glue("fxdata version: {unique(d.fxdata.org$.version.)}\n\n"))
-    }
-    d.fxdata.wide <- d.fxdata.org |>
-      dplyr::select(-".version.") |>
-      dplyr::arrange(.data$fxdate)
-    d.fxdata.long <- d.fxdata.wide |>
-      tidyr::pivot_longer(-"fxdate", names_to = "currency", values_to = "rate") |>
-      dplyr::filter(!is.na(.data$rate)) |>
-      dplyr::arrange(.data$fxdate, .data$currency)
-    d.fxdata.filled <- d.fxdata.wide |>
-      dplyr::arrange(.data$fxdate) |>
-      dplyr::mutate(dplyr::across(-"fxdate", ~ fx_vec_fill_gaps(.x)))
+      # Construct alternative formats for fxdata
+      d.fxdata.org <- read_parquet_multi(fs::path(fxdata_dir, bank))
+      if (length(unique(d.fxdata.org$.version.)) != 1 ) {
+        cli::cli_warn("More than one version in data. This will be an error soon.")
+      } else {
+        xcat(glue("fxdata version: {unique(d.fxdata.org$.version.)}\n\n"))
+      }
+      d.fxdata.wide <- d.fxdata.org |>
+        dplyr::select(-".version.") |>
+        dplyr::arrange(.data$fxdate)
+      d.fxdata.long <- d.fxdata.wide |>
+        tidyr::pivot_longer(-"fxdate", names_to = "currency", values_to = "rate") |>
+        dplyr::filter(!is.na(.data$rate)) |>
+        dplyr::arrange(.data$fxdate, .data$currency)
+      d.fxdata.filled <- d.fxdata.wide |>
+        dplyr::arrange(.data$fxdate) |>
+        dplyr::mutate(dplyr::across(-"fxdate", ~ fx_vec_fill_gaps(.x)))
 
-    # Write all three versions to the database
-    duckdb::dbWriteTable(conn, "fxtable", d.fxdata.wide)
-    duckdb::dbWriteTable(conn, "fxtable_filled", d.fxdata.filled)
-    duckdb::dbWriteTable(conn, "fxtable_long", d.fxdata.long)
+      # Construct alternative fxdata_long tables, each with explicit sorting
+      d.fxdata.long.random   <- withr::with_seed(42, d.fxdata.long |> dplyr::slice_sample(n = nrow(d.fxdata.long)))
+      d.fxdata.long.cur.date <- d.fxdata.long |> dplyr::arrange(.data$currency, .data$fxdate)
+      d.fxdata.long.date.cur <- d.fxdata.long |> dplyr::arrange(.data$fxdate, .data$currency)
+
+      # Write alternative versions to the database
+      duckdb::dbWriteTable(conn, "fxtable", d.fxdata.wide)
+      duckdb::dbWriteTable(conn, "fxtable_filled", d.fxdata.filled)
+      duckdb::dbWriteTable(conn, "fxtable_long", d.fxdata.long)
+      duckdb::dbWriteTable(conn, "fxtable_long_random", d.fxdata.long.random)
+      duckdb::dbWriteTable(conn, "fxtable_long_date_cur", d.fxdata.long.date.cur)
+      duckdb::dbWriteTable(conn, "fxtable_long_cur_date", d.fxdata.long.cur.date)
+
+      # Create table with primary key (checkpoint statement is required)
+      q.result <- duckdb::dbSendQuery(conn, glue("
+          BEGIN TRANSACTION;
+          CREATE TABLE fxtable_long_pk AS SELECT * FROM fxtable_long ORDER BY currency, fxdate;
+          ALTER TABLE  fxtable_long_pk ADD PRIMARY KEY (currency, fxdate);
+          COMMIT;
+          CHECKPOINT;")) # |> print()
+    })
 
   } # End tasks conditional on downloads needed
 
