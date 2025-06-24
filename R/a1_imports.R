@@ -1,7 +1,4 @@
 
-## Per-session global variables are stored in .globals environment
-.globals <- new.env(parent = emptyenv())
-
 #' @importFrom checkmate qassert
 #' @importFrom checkmate assert_flag assert_string
 #'   assert_number assert_int assert_count
@@ -20,7 +17,7 @@ assert_dots_empty <- rlang::check_dots_empty
 #' @importFrom glue glue
 NULL
 
-#' @importFrom rlang arg_match seq2
+#' @importFrom rlang %||% arg_match seq2 new_environment
 NULL
 
 #' @importFrom lubridate ymd
