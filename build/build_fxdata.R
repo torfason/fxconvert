@@ -110,7 +110,7 @@ fxdata_folder <- here("..", "fxdata")
 d.git <- git_status(repo = fxdata_folder)
 if (nrow(d.git) > 0) {
   cat("Listing all new/modified items in git status:\n")
-  print(d.git)
+  print(d.git, n = Inf)
 }
 
 # Check status, filtering out any lines that should not be in the result
@@ -138,7 +138,7 @@ if (nrow(d.git_status_errors) > 0) {
   mod_count <- nrow(filter(d.git, status == "modified"))
   new_count <- nrow(filter(d.git, status == "new"))
   git_add(d.git$file, repo = fxdata_folder)
-  git_commit(glue("New data snapshot {Sys.Date()} (autocommit)"), repo = fxdata_folder) |>
+  git_commit(glue("New data snapshot on {Sys.Date()} (autocommit)"), repo = fxdata_folder) |>
     glue_vector("Committed with ID: {.}") |>
     print()
   glue("Completed build_fxdata.R: {new_count} new files, {mod_count} changed") |>

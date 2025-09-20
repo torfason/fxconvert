@@ -120,7 +120,7 @@ cur_tibble_long_from_pin <- function(cur) {
 #cur_tibble_from_pin("GBP")
 
 # Pin all the currencies, bind into a tibble, and widen it
-cat("Pinning: ")
+cat(glue("Pinning {nrow(d.currency_list)} currency URLs:\n\n"))
 d.tidy <- d.currency_list$currency_code |>
   lapply(cur_tibble_long_from_pin) |>
   bind_rows() |>
