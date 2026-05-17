@@ -16,6 +16,7 @@
 #' @param action String specifying which initialization action to take. One of
 #'   `auto`, `update`, `offline`, `full`, `remove`. See details. Replaces
 #'   `approach`.
+#' @param mirai Should data fetching use `mirai` for parallel processing.
 #'
 #' @details
 #' This function ensures that the local FX data store is up to date by:
@@ -45,28 +46,63 @@
 fx_init <- function(..., banks = c("ecb", "cbi", "fed", "xfed"),
                    action = c("auto", "update", "offline", "full", "remove"),
                    verbose = TRUE,
-                   once = FALSE) {
+                   once = FALSE, mirai = FALSE) {
 
   # Assert parameters
   assert_dots_empty()
   assert_flag(verbose)
   assert_flag(once)
-  zmisc::assert_character(banks)
+  assert_character(banks)
   action <- arg_match(action)
+  assert_flag(mirai)
 
-  for (bank in banks) {
-    fx_init_single(bank = bank, action = action, verbose = verbose, once = once)
+  # Abort if action is "auto" and we have already initialized
+  # all specified banks in  this session
+  if ((action == "auto") &&
+      all(unlist(mget(banks, envir = .globals, ifnotfound = list(FALSE))))) {
+    return(invisible(NULL))
   }
+
+  if (mirai) {
+
+    # Setup and teardown for mirai
+    withr::defer(mirai::daemons(0))
+    mirai::daemons(n = length(banks))
+
+    x <- mirai::mirai_map(banks, function(bank) {
+      fxconvert:::fx_init_impl_single(
+        bank = bank,
+        action = action,
+        verbose = verbose,
+        once = once
+      )
+    }, verbose = verbose, action = action, verbose = verbose, once = once)
+
+    x <- force(x[])
+
+    if (any(sapply(x[], inherits, "miraiError"))) {
+      print(x[])
+      stop("Error in mirai call")
+    }
+
+  } else {
+    x <- list()
+    for (bank in banks) {
+      result <- fx_init_impl_single(bank = bank, action = action, verbose = verbose, once = once)
+      x <- append(x, result)
+    }
+  }
+
+  names(x) <- banks
+  list2env(x, envir = .globals)
+
+  #print(ls(.globals))
+  invisible()
 }
 
-#' Initialize fxdata only for a single bank
-#'
-#' @param approach String specifying how the function should handle
-#'   existing data. One of `"incremental"` (default), `"fresh"`,
-#'   `"local_refresh"`, `"remove"`. See details. Obsolete, replaced by `action`
-#'
-#' @noRd
-fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
+# Initialize fxdata only for a single bank
+# (This should ONLY be called from fx_init())
+fx_init_impl_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
                     action = c("auto", "update", "offline", "full", "remove"),
                     verbose = TRUE,
                     once = FALSE,
@@ -81,9 +117,6 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
   action <- arg_match(action)
   approach <- arg_match(approach)
 
-  # Abort if action is "auto" and we have already initialized in this session
-  if (action == "auto" && !is.null(.globals[[bank]]))
-    return(invisible(NULL))
 
   # We also abort if sitrep() looks good and we have no internet
   if (!curl::has_internet()) {
@@ -125,11 +158,27 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
     return(invisible(NULL))
   }
 
+## START: fx_init_fetch_parquet() which should fetch all banks in two roundtrips
+
   # Download all parquet files from the server. The url should point to the fxdata
   # directory on the server (temporary approach until options are implemented)
   # (Can be swapped to another version when developing new data versions)
   #fxdata_server_url <- "https://dev.vestur.net/fxdata/"
   fxdata_server_url <- "https://github.com/torfason/fxdata/raw/refs/heads/main/"
+# TODO: Use fx_options() for url
+  # test_urls for reproducible incremental inits rely on branches, such as
+  # https://raw.githubusercontent.com/torfason/fxdata/refs/heads/testing/v2/2025_12_22/meta_ecb.json
+  # https://raw.githubusercontent.com/torfason/fxdata/refs/heads/testing/v2/2026_04_15/meta_ecb.json
+  #
+  # the several relevant urls are
+  # curl_with_url https://raw.githubusercontent.com/torfason/fxdata/refs/heads/testing/v2/2025_12_22/meta_ecb.json
+  # curl_with_url https://raw.githubusercontent.com/torfason/fxdata/refs/heads/testing/v2/2026_04_15/meta_ecb.json
+  # curl_with_url https://raw.githubusercontent.com/torfason/fxdata/refs/heads/main/meta_ecb.json
+  # curl_with_url https://fx-data.pages.dev/meta_ecb.json
+  # curl_with_url https://fx-data.pages.dev/README.md
+  #
+  # not ready yet is:
+  # curl_with_url https://fxdata.torfason.net/meta_ecb.json
 
   # Prepare the fx_dir for usage as local data store,
   # as well as the subdirectory for the specific source being refreshed
@@ -141,6 +190,9 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
     dir.create(fs::path(fxdata_dir, bank), recursive = TRUE)
   }
 
+# TODO: Use temp files and only move to final location once new update has been confirmed
+# (after all new files have been downloaded, deleting old ones and then moving the json
+# files are all local operations and should not fail)
   # Get available dates (first and last) from the remote server
   # We save them to disk before reading
   l.dates_available <- curl::curl_download(
@@ -199,6 +251,10 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
     )
   }
 
+## END: fx_init_fetch_parquet() which should fetch all banks in two roundtrips
+
+## START: fx_init_write_duckdb() (one/many/mirai???)
+
   # Construct a fresh duckdb. We do this if there were any new parquet files downloaded.
   if (length(v.range_for_download) > 0) {
     xcat("Loading parquet files into duckdb database ...\n")
@@ -231,6 +287,9 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
       d.fxdata.long.cur.date <- d.fxdata.long |> dplyr::arrange(.data$currency, .data$fxdate)
       d.fxdata.long.date.cur <- d.fxdata.long |> dplyr::arrange(.data$fxdate, .data$currency)
 
+  # TODO: These multiple writes  (and multiple sorts above) seem like removing them could save quite a lot of time,
+  # possibly making mirai even less needed
+
       # Write alternative versions to the database
       duckdb::dbWriteTable(conn, "fxtable", d.fxdata.wide)
       duckdb::dbWriteTable(conn, "fxtable_filled", d.fxdata.filled)
@@ -239,24 +298,24 @@ fx_init_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
       duckdb::dbWriteTable(conn, "fxtable_long_date_cur", d.fxdata.long.date.cur)
       duckdb::dbWriteTable(conn, "fxtable_long_cur_date", d.fxdata.long.cur.date)
 
-      # Create table with primary key (checkpoint statement is required)
-      q.result <- duckdb::dbSendQuery(conn, glue("
+      # Create table with primary key
+      # (checkpoint statement is required to clear WAL)
+      q.result <- db_execute(conn, glue("
           BEGIN TRANSACTION;
           CREATE TABLE fxtable_long_pk AS SELECT * FROM fxtable_long ORDER BY currency, fxdate;
           ALTER TABLE  fxtable_long_pk ADD PRIMARY KEY (currency, fxdate);
           COMMIT;
-          CHECKPOINT;")) # |> print()
+          CHECKPOINT;"))
     })
 
+    invisible()
   } # End tasks conditional on downloads needed
 
 
 
   # Test that state is OK
   if (fx_sitrep(bank = bank, verbose = verbose)) {
-    # By now, we are assured that sitrep(bank) is true.
-    .globals[[bank]] <- TRUE
-    return(invisible(NULL))
+    return(TRUE)
   } else {
     cli::cli_abort("fx_sitrep() still FALSE at end of fx_init(). Aborting ...")
   }

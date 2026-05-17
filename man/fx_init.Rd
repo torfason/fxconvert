@@ -9,7 +9,8 @@ fx_init(
   banks = c("ecb", "cbi", "fed", "xfed"),
   action = c("auto", "update", "offline", "full", "remove"),
   verbose = TRUE,
-  once = FALSE
+  once = FALSE,
+  mirai = FALSE
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ Defaults to \code{TRUE}.}
 
 \item{once}{Logical indicating whether to only perform actual initialization
 once per R session. Defaults to \code{FALSE}.}
+
+\item{mirai}{Should data fetching use \code{mirai} for parallel processing.}
 }
 \description{
 This function initializes and refreshes the local foreign exchange (FX) data
