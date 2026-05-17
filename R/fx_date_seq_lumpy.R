@@ -2,10 +2,12 @@
 #' Generate a sequence of dates
 #'
 #' Creates a daily date sequence between two dates, ensuring the end date is not
-#' earlier than the start date.
+#' earlier than the start date. Useful to pass a range to the `fxdate` argument
+#' of the  [fxconvert::fx_get()] and [fxconvert::fx_convert()] functions
 #'
 #' @param from_date A date or character string in "YYYY-MM-DD" format.
-#' @param to_date A date or character string in "YYYY-MM-DD" format.
+#' @param to_date A date or character string in "YYYY-MM-DD" format. Defaults to
+#'   today's date.
 #'
 #' @return A sequence of dates from `from_date` to `to_date`.
 #'
@@ -14,7 +16,7 @@
 #' fx_date_seq(as.Date("2023-06-01"), as.Date("2023-06-05"))
 #' @keywords internal
 #' @export
-fx_date_seq <- function(from_date, to_date) {
+fx_date_seq <- function(from_date, to_date = lubridate::today()) {
 
   # Preprocess and verify arguments
   from_date <- lubridate::ymd(from_date)
@@ -44,9 +46,10 @@ fx_date_seq <- function(from_date, to_date) {
 #' @keywords internal
 #' @export
 fx_date_seq_lumpy <- function(from_date, to_date, lump_decades = FALSE) {
-  lump_unit_now <- dplyr::case_match(lump_decades,
+  lump_unit_now <- dplyr::recode_values(lump_decades,
                                      FALSE ~ "year",
-                                     TRUE ~ "decade")
+                                     TRUE ~ "decade",
+                                     unmatched = "error")
   lump_unit_halt <- "decaday"
   lump_dates_recursive(dates = fx_date_seq(from_date, to_date),
                               lump_unit_now = lump_unit_now,
@@ -293,8 +296,8 @@ first_date <- function(x,  unit = c("millennium", "century", "decade",
   unit <- arg_match(unit)
 
   if (unit != "decaday") {
-    unit <- dplyr::case_match(unit, "millennium" ~ "1000 year", "century" ~ "100 year",
-                       "decade" ~ "10 year", .default = unit )
+    unit <- dplyr::replace_values(unit,
+        "millennium" ~ "1000 year", "century" ~ "100 year", "decade" ~ "10 year")
     lubridate::floor_date(x, unit)
   } else {
     lubridate::day(x) <- pmax((lubridate::day(x) %/% 10)*10, 1)
@@ -314,8 +317,8 @@ last_date <- function(x,  unit = c("millennium", "century", "decade",
   unit <- arg_match(unit)
 
   if (unit != "decaday") {
-    unit <- dplyr::case_match(unit, "millennium" ~ "1000 year", "century" ~ "100 year",
-                       "decade" ~ "10 year", .default = unit )
+    unit <- dplyr::replace_values(unit,
+        "millennium" ~ "1000 year", "century" ~ "100 year", "decade" ~ "10 year")
     lubridate::ceiling_date(x, unit) - 1
   } else {
     lubridate::day(x) <-

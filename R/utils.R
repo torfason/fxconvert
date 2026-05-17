@@ -39,6 +39,8 @@ fx_duck_local <- function(bank, ...,
                           options = fx_options(),
                           envir = parent.frame()) {
 
+  xinform <- function(...) { invisible() }
+
   # Check input
   assert_choice(bank, c("ecb", "cbi", "fed", "xfed"))
   assert_dots_empty()
@@ -48,13 +50,20 @@ fx_duck_local <- function(bank, ...,
   assert_environment(envir)
 
   # Ensure dbstate is initialized with defaults if running for first time
-  .globals$dbstate                    <- .globals$dbstate %||% new_environment()
-  .globals$dbstate[[bank]]            <- .globals$dbstate[[bank]] %||% new_environment()
-  .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count %||% 0
+  # conns_used is the number of conns that have been given out
+  # conns_pool is a list of pools created, conns are taken from this
+  .globals$dbstate                      <- .globals$dbstate %||% new_environment()
+  .globals$dbstate[[bank]]              <- .globals$dbstate[[bank]] %||% new_environment()
+  .globals$dbstate[[bank]]$conn_count   <- .globals$dbstate[[bank]]$conn_count %||% 0
+  .globals$dbstate[[bank]]$conn_pool    <- .globals$dbstate[[bank]]$conn_pool %||% list()
 
+  # Define some local variables
   dbdir  <- fx_get_fxdata_dir()
   dbfile <- fs::path(dbdir, glue("{bank}.duckdb"))
+
   if (wipe_db && !read_only) {
+
+    # Prepare a read-write connection
 
     # Check outstanding connections, error if there are any
     if (!isTRUE(.globals$dbstate[[bank]]$conn_count == 0)) {
@@ -62,30 +71,72 @@ fx_duck_local <- function(bank, ...,
                        i = "There currently exist {(.globals$dbstate[[bank]]$conn_count)}"))
     }
 
-    # We want to wipe db and make file system ready for a new one
-    # The following should work regardless of a db exists or if we are fully fresh
+    # Close all read-write connections in conn_pool, and empty it
+    lapply(.globals$dbstate[[bank]]$conn_pool, duckdb::dbDisconnect, shutdown = TRUE)
+    .globals$dbstate[[bank]]$conn_pool <- list()
+
+    # Wipe db and make file system ready for a new one
     fs::dir_create(dbdir, recurse = TRUE)
     if (fs::file_exists(dbfile))
       fs::file_delete(dbfile)
+
+    # Prepare a new read-write connection and register a deferred clenaup
+    conn <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = FALSE))
+
+    xinform("Creating read/write connection ...")
+    withr::defer({
+      duckdb::dbDisconnect(conn, shutdown = TRUE)
+      xinform("Destroying read/write connection ...")
+    }, envir = envir)
+    return(conn)
+
   } else if (wipe_db) {
     cli::cli_abort("Attempting to wipe db but read_only was specified")
-  } else if (!read_only)
+  } else if (!read_only) {
     cli::cli_abort("Read/write connections are only allowed if wiping database is specified")
+  } else {
 
-  # Verification of state seems to be OK, we
-  #   - Create a conn (we follow conventions in https://r.duckdb.org/ docs and use conn rather than con )
-  #   - Update number of connections outstanding
-  #   - Add a defer to reverse both actions
-  conn <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = read_only))
-  .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count + 1
-  #cli::cli_inform("fx_duck_local(): {(.globals$dbstate[[bank]]$conn_count)} conns exist")
+    # Prepare a read-only connection, here we can use the pool
 
-  withr::defer({
-    duckdb::dbDisconnect(conn, shutdown = TRUE)
-    .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count - 1
+    # Verification of state seems to be OK, we
+    #   - Create a conn
+    #   - Update number of connections outstanding
+    #   - Add a defer to reverse both actions
+
+    xinform("connpool length: {length(.globals$dbstate[[bank]]$conn_pool)}")
+
+    # Check if there are available connections in the pool
+    if (length(.globals$dbstate[[bank]]$conn_pool) > 0) {
+      # There are conns in the pool, we remove the last one to return
+      conn <- .globals$dbstate[[bank]]$conn_pool[[length(.globals$dbstate[[bank]]$conn_pool)]]
+      .globals$dbstate[[bank]]$conn_pool <-
+        .globals$dbstate[[bank]]$conn_pool[-length(.globals$dbstate[[bank]]$conn_pool)]
+      xinform("Getting readonly connection from pool...")
+    } else {
+      # No conns in the pool, we need to create a new one
+      conn <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = TRUE))
+      xinform("Creating readonly connection ...")
+    }
+
+    # Increment number of outstanding connections
+    .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count + 1
+
+    # Defer adding the connection back to the pool and decrementing the number of outstanding connections
+    withr::defer({
+      .globals$dbstate[[bank]]$conn_pool[[length(.globals$dbstate[[bank]]$conn_pool)+1]] <- conn
+      .globals$dbstate[[bank]]$conn_count <- .globals$dbstate[[bank]]$conn_count - 1
+
+      xinform("Adding readonly connection to pool, length: {length(.globals$dbstate[[bank]]$conn_pool)}")
+
+      }, envir = envir)
+    return(conn)
+
+    #cli::cli_inform("fx_duck_local(): {(.globals$dbstate[[bank]]$conn_count)} conns exist")
     #cli::cli_inform("fx_duck_local(): {(.globals$dbstate[[bank]]$conn_count)} conns exist (deferred run)")
-    }, envir = envir)
-  conn
+
+
+  }
+
 }
 
 # Local implementation of DBI::dbGetQuery, because DBI is not directly imported
@@ -96,7 +147,7 @@ db_get_query <- function(conn, statement, ..., n = -1L) {
   withr::defer(duckdb::dbClearResult(rs))
 
   # Return all relevant results
-  duckdb::dbFetch(rs, n = n, ...)
+  duckdb::dbFetch(rs, n = n, ...) |> tibble::as_tibble()
 }
 
 # Local implementation of DBI::dbExecute, because DBI is not directly imported

@@ -4,19 +4,21 @@
 \alias{fx_date_seq}
 \title{Generate a sequence of dates}
 \usage{
-fx_date_seq(from_date, to_date)
+fx_date_seq(from_date, to_date = lubridate::today())
 }
 \arguments{
 \item{from_date}{A date or character string in "YYYY-MM-DD" format.}
 
-\item{to_date}{A date or character string in "YYYY-MM-DD" format.}
+\item{to_date}{A date or character string in "YYYY-MM-DD" format. Defaults to
+today's date.}
 }
 \value{
 A sequence of dates from \code{from_date} to \code{to_date}.
 }
 \description{
 Creates a daily date sequence between two dates, ensuring the end date is not
-earlier than the start date.
+earlier than the start date. Useful to pass a range to the \code{fxdate} argument
+of the  \code{\link[=fx_get]{fx_get()}} and \code{\link[=fx_convert]{fx_convert()}} functions
 }
 \examples{
 fx_date_seq("2024-01-01", "2024-01-10")

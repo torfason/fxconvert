@@ -25,7 +25,10 @@ fx_get <- function(from, to, fxdate = today(), bank = "ecb", ..., .interpolate =
   # Verify arguments
   assert_character(from)
   assert_character(to)
+  fxdate <- ymd(fxdate)
+  assert_date(fxdate, any.missing = FALSE)
   assert_string(bank)
+  assert_dots_empty()
   assert_flag(.interpolate)
 
   # Initialize once per session before getting
@@ -77,7 +80,7 @@ fx_get_impl_join <- function(from, to, fxdate, bank, .interpolate, join_engine, 
 
   # Check oldest rates and warn if older than max_age_warn
   # (if no rows were returned we treat the max as zero)
-  oldest_rates <- ifelse(n_recycled>0, max(c(d.from$age, d.to$age)), 0)
+  oldest_rates <- ifelse(length(d.from$age)>0, max(c(d.from$age, d.to$age)), 0)
   if (oldest_rates > 7) cli::cli_warn("Oldest rates used for conversion were {oldest_rates} days old.")
 
   # Calculate bilateral rates and return
@@ -263,6 +266,7 @@ fx_baserates_join_dplyr <- function(currency, fxdate, bank = "ecb", ..., table_n
 
   conn <- fx_duck_local(bank)
   duckdb::duckdb_register(conn, "fxrequest", d.fxrequest)
+  withr::defer(duckdb::duckdb_unregister(conn, "fxrequest"))
 
   tbl.fxdata    <- dplyr::tbl(conn, table_name)
   tbl.fxrequest <- dplyr::tbl(conn, "fxrequest")
@@ -271,22 +275,21 @@ fx_baserates_join_dplyr <- function(currency, fxdate, bank = "ecb", ..., table_n
 
   # https://www.tidyverse.org/blog/2023/01/dplyr-1-1-0-joins/
   dplyr::left_join(d.fxrequest, d.fxdata, dplyr::join_by(currency, closest(x$fxdate >= y$fxdate))) |>
-    dplyr::mutate(age = as.numeric(fxdate.x - fxdate.y)) |>
-    dplyr::select(currency, rate, age)
-
+    dplyr::mutate(age = as.numeric(.data$fxdate.x - .data$fxdate.y)) |>
+    dplyr::select(dplyr::all_of(c("currency", "rate", "age")))
 }
 
 
 # Implementation to construct baserates table with a duckdb join
 fx_baserates_join_duckdb <- function(currency, fxdate, bank = "ecb", ..., asof, table_name, options = fx_options()) {
 
-  # Verify arguments
+  # Verify arguments (should not really be needed since this is an internal function)
   assert_character(currency)
+  assert_date(fxdate, any.missing = FALSE)
   assert_string(bank)
 
   # Verify and preprocess parameters
   currency   <- tolower(currency)
-  fxdate <- ymd(fxdate)
   bank   <- tolower(bank)
 
   # Ensure vectors are recyclable to the same length
@@ -295,13 +298,15 @@ fx_baserates_join_duckdb <- function(currency, fxdate, bank = "ecb", ..., asof, 
     fxdate = fxdate
   ) |> dplyr::mutate (row_number = dplyr::row_number())
 
+  # Get DB connection, register table, and defer an unregister
   conn <- fx_duck_local(bank)
   duckdb::duckdb_register(conn, "fxrequest", d.fxrequest)
   withr::defer(duckdb::duckdb_unregister(conn, "fxrequest"))
 
-  # TODO: Wrap in db_get_query(conn, statement) { ... }
+  # Prepare SQl string
   if (asof) {
-    res <- duckdb::dbSendQuery(conn, glue("
+    # An ASOF join is the most effective way for the join
+    sql <- glue("
       SELECT
         rq.currency,
         rq.fxdate,
@@ -312,9 +317,10 @@ fx_baserates_join_duckdb <- function(currency, fxdate, bank = "ecb", ..., asof, 
         ON rq.currency = fxd.currency
         AND rq.fxdate >= fxd.fxdate
       ORDER BY rq.row_number
-    "))
+    ")
   } else {
-    res <- duckdb::dbSendQuery(conn, glue("
+    # Alternative approach using QUALIFY
+    sql <- glue("
       SELECT
         rq.currency,
         fxd.rate,
@@ -325,16 +331,11 @@ fx_baserates_join_duckdb <- function(currency, fxdate, bank = "ecb", ..., asof, 
         AND fxd.fxdate <= rq.fxdate
       QUALIFY fxd.fxdate = MAX(fxd.fxdate) OVER (PARTITION BY rq.fxdate, rq.currency)
       ORDER BY rq.row_number
-    "))
+    ")
   }
 
-  # Defer clearing results (not needed once we use db_get_query() for the query)
-  withr::defer(duckdb::dbClearResult(res))
-
-  # Get a tibble and return it
-  data <- duckdb::dbFetch(res) |> dplyr::as_tibble()
-  data
-
+  # Execute the query and return the result
+  db_get_query(conn, sql)
 }
 
 

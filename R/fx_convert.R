@@ -8,15 +8,26 @@
 #'
 #' @rdname fx_get
 #' @export
-fx_convert <- function(amount, from, to, fxdate = today(), bank = "ecb", ..., .interpolate = FALSE) {
+fx_convert <- function(amount, from, to, fxdate = today(), bank = "ecb",
+                       ...,  .interpolate = FALSE) {
 
-  # Validate and recycle
-  args <- vctrs::vec_recycle_common(
+  # Verify arguments
+  assert_numeric(amount)
+  assert_character(from)
+  assert_character(to)
+  fxdate <- ymd(fxdate)
+  assert_date(fxdate, any.missing = FALSE)
+  assert_string(bank)
+  assert_dots_empty()
+  assert_flag(.interpolate)
+
+  # Recycle arguments, to ensure amount is included in the recycling
+  args <- tibble::tibble(
     amount = amount,
     from = from,
     to = to,
     fxdate = fxdate)
-  bank <- arg_match(bank)
 
+  # Multiply amount by exchange rate
   args$amount * fx_get(args$from, args$to, args$fxdate, bank, ..., .interpolate = .interpolate)
 }

@@ -1,7 +1,7 @@
 
 #' @importFrom checkmate qassert
 #' @importFrom checkmate assert_flag assert_string
-#'   assert_number assert_int assert_count
+#'   assert_number assert_int assert_count assert_numeric
 #' @importFrom checkmate assert_date assert_character
 #' @importFrom checkmate assert_list assert_data_frame assert_class
 #' @importFrom checkmate assert_choice assert_environment
@@ -39,3 +39,8 @@ workaround_for_import_checks <- function()
   dbplyr::lazy_frame(a = letters)
   rlang::int()
 }
+
+# Define globals needed to suppress errors related to dplyr::join_by()
+utils::globalVariables(c(
+  "x", "y", "closest"
+))
