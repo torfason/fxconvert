@@ -10,3 +10,5 @@
 ^pkgdown$
 ^\.github$
 ^data-raw$
+^\.positai$
+^\.claude$

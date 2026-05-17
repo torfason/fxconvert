@@ -12,7 +12,7 @@ Description: Convert currencies based on rates obtained directly from central
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports: 
     checkmate,
     cli,
@@ -22,6 +22,7 @@ Imports:
     fs,
     glue,
     lubridate,
+    mirai,
     rlang,
     rappdirs,
     tibble,
