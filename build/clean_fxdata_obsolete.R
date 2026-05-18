@@ -28,7 +28,8 @@ import::from(utils_build_fxdata.R,
              .directory = here("build"))
 
 # Set fxdata folders and banks to use
-fxdata_folders <- c(here("..", "fxdata"), here("..", "fxdata_dev"))
+cli_inform("Processing fxdata (uncomment below to include fxdata_dev)")
+fxdata_folders <- here("..", "fxdata") # |> c(here("..", "fxdata_dev"))
 banks <- c("ecb", "cbi", "fed", "xfed")
 
 # Double loop, going through each fxdata folder and each bank to clean them up

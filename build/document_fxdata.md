@@ -30,49 +30,49 @@ restrictions or other reasons.
 
 | Symbol | Name                        |    ECB    |    CBI    |    FED    |
 |:-------|:----------------------------|:---------:|:---------:|:---------:|
-| EUR    | Euro                        | 1999-2025 | 1999-2025 | 1999-2025 |
-| USD    | US Dollar                   | 1999-2025 | 1981-2025 | 1971-2025 |
-| CAD    | Canadian Dollar             | 1999-2025 | 1981-2025 | 1971-2025 |
-| CHF    | Swiss Franc                 | 1999-2025 | 1981-2025 | 1971-2025 |
-| DKK    | Danish Krone                | 1999-2025 | 1981-2025 | 1971-2025 |
-| GBP    | Pound Sterling              | 1999-2025 | 1981-2025 | 1971-2025 |
-| JPY    | Japanese Yen                | 1999-2025 | 1981-2025 | 1971-2025 |
-| NOK    | Norwegian Krone             | 1999-2025 | 1981-2025 | 1971-2025 |
-| SEK    | Swedish Krona               | 1999-2025 | 1981-2025 | 1971-2025 |
-| AUD    | Australian Dollar           | 1999-2025 | 2006-2025 | 1971-2025 |
-| NZD    | New Zealand Dollar          | 1999-2025 | 2006-2025 | 1971-2025 |
-| ZAR    | South African Rand          | 1999-2025 | 2006-2025 | 1980-2025 |
-| HKD    | Hong Kong Dollar            | 1999-2025 | 2006-2025 | 1981-2025 |
-| KRW    | South Korean Won            | 1999-2025 | 2006-2025 | 1981-2025 |
-| SGD    | Singapore Dollar            | 1999-2025 | 2006-2025 | 1981-2025 |
-| CNY    | Yuan Renminbi               | 2005-2025 | 1981-2025 | 1981-2025 |
-| THB    | Thai Baht                   | 2005-2025 | 2008-2025 | 1981-2025 |
-| MXN    | Mexican Peso                | 2008-2025 | 2006-2025 | 1993-2025 |
-| BRL    | Brazilian Real              | 2008-2025 | 2006-2025 | 1995-2025 |
-| INR    | Indian Rupee                | 2009-2025 | 2006-2025 | 1973-2025 |
-| ISK    | Icelandic Króna             | 1999-2025 | 1981-2025 |     .     |
+| EUR    | Euro                        | 1999-2026 | 1999-2026 | 1999-2026 |
+| USD    | US Dollar                   | 1999-2026 | 1981-2026 | 1971-2026 |
+| CAD    | Canadian Dollar             | 1999-2026 | 1981-2026 | 1971-2026 |
+| CHF    | Swiss Franc                 | 1999-2026 | 1981-2026 | 1971-2026 |
+| DKK    | Danish Krone                | 1999-2026 | 1981-2026 | 1971-2026 |
+| GBP    | Pound Sterling              | 1999-2026 | 1981-2026 | 1971-2026 |
+| JPY    | Japanese Yen                | 1999-2026 | 1981-2026 | 1971-2026 |
+| NOK    | Norwegian Krone             | 1999-2026 | 1981-2026 | 1971-2026 |
+| SEK    | Swedish Krona               | 1999-2026 | 1981-2026 | 1971-2026 |
+| AUD    | Australian Dollar           | 1999-2026 | 2006-2026 | 1971-2026 |
+| NZD    | New Zealand Dollar          | 1999-2026 | 2006-2026 | 1971-2026 |
+| ZAR    | South African Rand          | 1999-2026 | 2006-2026 | 1980-2026 |
+| HKD    | Hong Kong Dollar            | 1999-2026 | 2006-2026 | 1981-2026 |
+| KRW    | South Korean Won            | 1999-2026 | 2006-2026 | 1981-2026 |
+| SGD    | Singapore Dollar            | 1999-2026 | 2006-2026 | 1981-2026 |
+| CNY    | Yuan Renminbi               | 2005-2026 | 1981-2026 | 1981-2026 |
+| THB    | Thai Baht                   | 2005-2026 | 2008-2026 | 1981-2026 |
+| MXN    | Mexican Peso                | 2008-2026 | 2006-2026 | 1993-2026 |
+| BRL    | Brazilian Real              | 2008-2026 | 2006-2026 | 1995-2026 |
+| INR    | Indian Rupee                | 2009-2026 | 2006-2026 | 1973-2026 |
+| ISK    | Icelandic Króna             | 1999-2026 | 1981-2026 |     .     |
 | MTL    | Maltese Lira                | 1999-2007 | 2006-2007 |     .     |
 | EEK    | Estonian Kroon              | 1999-2010 | 2006-2010 |     .     |
 | LVL    | Latvian Lats                | 1999-2013 | 2006-2013 |     .     |
 | LTL    | Lithuanian Litas            | 1999-2014 | 2006-2014 |     .     |
-| CZK    | Czech Koruna                | 1999-2025 | 2006-2025 |     .     |
-| HUF    | Hungarian Forint            | 1999-2025 | 2006-2025 |     .     |
-| PLN    | Polish Zloty                | 1999-2025 | 2006-2025 |     .     |
+| CZK    | Czech Koruna                | 1999-2026 | 2006-2026 |     .     |
+| HUF    | Hungarian Forint            | 1999-2026 | 2006-2026 |     .     |
+| PLN    | Polish Zloty                | 1999-2026 | 2006-2026 |     .     |
 | BGN    | Bulgarian Lev               | 2000-2025 | 2006-2025 |     .     |
 | HRK    | Croatian Kuna               | 2005-2022 | 2006-2022 |     .     |
 | RUB    | Russian Ruble               | 2005-2022 | 2006-2022 |     .     |
-| TRY    | Turkish Lira                | 2005-2025 | 2006-2025 |     .     |
-| ILS    | New Israeli Shekel          | 2011-2025 | 2006-2025 |     .     |
-| MYR    | Malaysian Ringgit           | 2005-2025 |     .     | 1971-2025 |
+| TRY    | Turkish Lira                | 2005-2026 | 2006-2026 |     .     |
+| ILS    | New Israeli Shekel          | 2011-2026 | 2006-2026 |     .     |
+| MYR    | Malaysian Ringgit           | 2005-2026 |     .     | 1971-2026 |
 | TRL    | Turkish Lira (old)          | 1999-2004 |     .     |     .     |
 | ROL    | Romanian Leu (old)          | 1999-2005 |     .     |     .     |
 | SIT    | Slovenian Tolar             | 1999-2006 |     .     |     .     |
 | CYP    | Cypriot Pound               | 1999-2007 |     .     |     .     |
 | SKK    | Slovak Koruna               | 1999-2008 |     .     |     .     |
-| IDR    | Rupiah                      | 2005-2025 |     .     |     .     |
-| PHP    | Philippine Peso             | 2005-2025 |     .     |     .     |
-| RON    | Romanian Leu                | 2005-2025 |     .     |     .     |
-| TWD    | New Taiwan Dollar           |     .     | 2006-2025 | 1983-2025 |
+| IDR    | Rupiah                      | 2005-2026 |     .     |     .     |
+| PHP    | Philippine Peso             | 2005-2026 |     .     |     .     |
+| RON    | Romanian Leu                | 2005-2026 |     .     |     .     |
+| TWD    | New Taiwan Dollar           |     .     | 2006-2026 | 1983-2026 |
 | ATS    | Austrian Schilling          |     .     | 1981-2002 |     .     |
 | DEM    | Deutsche Mark               |     .     | 1981-2002 |     .     |
 | ESP    | Spanish Peseta              |     .     | 1981-2002 |     .     |
@@ -82,17 +82,17 @@ restrictions or other reasons.
 | ITL    | Italian Lira                |     .     | 1981-2002 |     .     |
 | NLG    | Dutch Guilder               |     .     | 1981-2002 |     .     |
 | PTE    | Portuguese Escudo           |     .     | 1981-2002 |     .     |
-| XDR    | Special Drawing Rights      |     .     | 1981-2025 |     .     |
+| XDR    | Special Drawing Rights      |     .     | 1981-2026 |     .     |
 | BEF    | Belgian Franc               |     .     | 1990-2002 |     .     |
 | GRD    | Greek Drachma               |     .     | 1992-2002 |     .     |
-| NGN    | Nigerian Naira              |     .     | 2006-2025 |     .     |
-| SRD    | Surinamese Dollar           |     .     | 2006-2025 |     .     |
-| JMD    | Jamaican Dollar             |     .     | 2010-2025 |     .     |
+| NGN    | Nigerian Naira              |     .     | 2006-2026 |     .     |
+| SRD    | Surinamese Dollar           |     .     | 2006-2026 |     .     |
+| JMD    | Jamaican Dollar             |     .     | 2010-2026 |     .     |
 | VEF    | Venezuelan Bolívar (old)    |     .     | 2013-2018 |     .     |
-| SAR    | Saudi Riyal                 |     .     | 2013-2025 |     .     |
-| KWD    | Kuwaiti Dinar               |     .     | 2024-2025 |     .     |
-| LKR    | Sri Lankan Rupee            |     .     |     .     | 1973-2025 |
-| VES    | Venezuelan Bolívar Soberano |     .     |     .     | 1995-2025 |
+| SAR    | Saudi Riyal                 |     .     | 2013-2026 |     .     |
+| KWD    | Kuwaiti Dinar               |     .     | 2024-2026 |     .     |
+| LKR    | Sri Lankan Rupee            |     .     |     .     | 1973-2026 |
+| VES    | Venezuelan Bolívar Soberano |     .     |     .     | 1995-2026 |
 
 ## Note on quotation methods
 

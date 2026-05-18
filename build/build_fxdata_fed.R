@@ -62,7 +62,7 @@ refresh_inf = Inf
 
 # List of currencies and the name of the FED series for each currency
 # (This version is correct for SEK and SGD that were previously mixed up)
-currency_list_as_csv <-
+currency_list_as_csv <- I(
 "currency_code,series_code,description
 BRL,DEXBZUS,Brazilian Reals to USD
 CAD,DEXCAUS,Canadian Dollar to USD
@@ -86,7 +86,7 @@ AUD,DEXUSAL,USD to Australian Dollar
 EUR,DEXUSEU,USD to Euro
 NZD,DEXUSNZ,USD to New Zealand Dollar
 GBP,DEXUSUK,USD to British Pound
-VES,DEXVZUS,Venezuelan Bolivar to USD"
+VES,DEXVZUS,Venezuelan Bolivar to USD")
 
 # Construct currency list and set direct/indirect column
 d.currency_list <- read_csv(currency_list_as_csv, show_col_types = FALSE) |>
@@ -104,7 +104,7 @@ lookup_series_code <- d.currency_list |>
 # Define function to retrieve, pin, and prepare a tibble for one currency,
 # with the currency code as special column.
 cur_tibble_long_from_pin <- function(cur) {
-  Sys.sleep(runif(1, min = 0.1, max = 0.2))
+  Sys.sleep(runif(1, min = 0.5, max = 1.1))
   cur_series <- lookup_series_code(cur)
   d.old <- glue("https://fred.stlouisfed.org/graph/fredgraph.csv?id={cur_series}&coed=2024-12-31") |>
     pin(refresh_hours = refresh_inf) |> read_csv(show_col_types = FALSE) |>

@@ -143,7 +143,7 @@ fxdata_write_lumpy_parquet <- function(d, fxdata_folder, bank) {
 
     } else {
 
-      # New file, write it out! (using \n so the output gets preserved)
+      # New file, write it out! (And log using \n so the output gets preserved)
       d.cur_range |> write_parquet(filename)
       written_file_count <- written_file_count + 1
       cat(" wrote new file ...\n")

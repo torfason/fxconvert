@@ -150,12 +150,33 @@ d.9.current <- cbi_url(9, "2025-01-01") |>
   cbi_read_csv()
 
 # Bind rows together, adding GroupIDs to track where each line comes from
-d.all.pre_join <- bind_rows(
+d.all.pre_join.new_currencies <- bind_rows(
   bind_rows(d.7.1900_full, d.7.current) |> mutate(GroupID = 7),
   bind_rows(d.9.1900_full, d.9.current) |> mutate(GroupID = 9) )
 
+cat("Filtering out unimplemented currencies, specifically:\n")
+
+# Some error due to changes in CBI data format
+d.new_omitted_currencies <- d.all.pre_join.new_currencies |>
+  anti_join(d.handmade_metadata_cbi, by = join_by(ID)) |>
+  mutate(Date = Date |> str_remove(" .*$") |> mdy()) |>
+  mutate(WhichRate = Description |> str_remove("^.*, ") |> str_remove("\\.$")) |>
+  summarise(across(c(GroupID, Name, WhichRate), zingle),
+            From = min(Date), To = max(Date), Avail = n(), AvgRate = mean(Value),
+            .by = ID)
+print(d.new_omitted_currencies)
+
+
+# d.all.pre_join must exclude the listed new currencies (until next version of the data)
+print(str_glue("These currencies ",
+               "({str_c(d.new_omitted_currencies$ID, collapse=', ')}) ",
+               "will be filtered out of the list."))
+d.all.pre_join <- d.all.pre_join.new_currencies |>
+  filter_out(ID %in% d.new_omitted_currencies$ID)
+
 # Join
 d.all <- inner_join(d.handmade_metadata_cbi, d.all.pre_join, by = join_by(ID), unmatched = "error")
+
 
 # cbi_widen_mid_2() is an update due to changing data format at the source in spring 2025
 d.all.wide <- d.all |> cbi_widen_mid_2()
