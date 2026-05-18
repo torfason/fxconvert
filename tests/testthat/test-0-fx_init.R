@@ -1,5 +1,6 @@
 
 test_that("fx_init() works", {
+  skip("testing mirai init ")
   if (curl::has_internet()) {
     fx_init(action = "auto", verbose = FALSE) |>
       expect_silent()

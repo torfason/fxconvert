@@ -28,6 +28,7 @@ test_that("fx_duck_local() connection is auto-closed", {
   }
   conn <- inner_test()
 
+  skip("With connections poooled, we do expect read-only connections to remain valid after function exits.")
   # After function is exidted, conn should be closed
   expect_false(duckdb::dbIsValid(conn))
 })
