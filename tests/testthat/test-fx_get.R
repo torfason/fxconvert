@@ -93,3 +93,12 @@ test_that("fx_get() handles long missing periods in the data correctly", {
     expect_error()
 })
 
+test_that("fx_get_multibank() can be used for to combine best available rates", {
+  suppressWarnings({
+    fx_get_multibank("usd", c("inr", "isk", "ron"), c("1973-05-20", "1990-05-20", "2025-05-20")) |>
+      dplyr::select(-c(fxdate, from, to)) |>
+      purrr::reduce(dplyr::coalesce) |>
+      expect_equal(c(7.52, 59.65, 4.51), tolerance = 0.01)
+  })
+})
+
