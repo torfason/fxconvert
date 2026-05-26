@@ -40,5 +40,5 @@ BugReports: https://github.com/torfason/fxconvert/issues
 Suggests: 
     here,
     testthat (>= 3.0.0)
-Depends: R (>= 3.5.0)
+Depends: R (>= 4.1.0)
 Config/testthat/edition: 3
