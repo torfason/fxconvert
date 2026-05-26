@@ -80,7 +80,8 @@ fx_get_impl_join <- function(from, to, fxdate, bank, .interpolate, join_engine, 
 
   # Check oldest rates and warn if older than max_age_warn
   # (if no rows were returned we treat the max as zero)
-  oldest_rates <- ifelse(length(d.from$age)>0, max(c(d.from$age, d.to$age)), 0)
+  oldest_rates <- ifelse(length(d.from$age)>0, max(c(d.from$age, d.to$age)), 0) |>
+    dplyr::replace_values(NA ~ Inf)
   if (oldest_rates > 7) cli::cli_warn("Oldest rates used for conversion were {oldest_rates} days old.")
 
   # Calculate bilateral rates and return
