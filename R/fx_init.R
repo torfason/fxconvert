@@ -49,12 +49,12 @@ fx_init <- function(..., banks = c("ecb", "cbi", "fed", "xfed"),
                    once = FALSE, mirai = FALSE) {
 
   # Assert parameters
-  assert_dots_empty()
-  assert_flag(verbose)
-  assert_flag(once)
-  assert_character(banks)
+  chk_dots_empty()
+  chk_flag(verbose)
+  chk_flag(once)
+  chk_character(banks)
   action <- arg_match(action)
-  assert_flag(mirai)
+  chk_flag(mirai)
 
   # Abort if action is "auto" and we have already initialized
   # all specified banks in  this session
@@ -110,9 +110,9 @@ fx_init_impl_single <- function(..., bank = c("ecb", "cbi", "fed", "xfed"),
                     approach = c("incremental", "fresh", "local_refresh", "remove")) {
 
   # Assert parameters
-  assert_dots_empty()
-  assert_flag(verbose)
-  assert_flag(once)
+  chk_dots_empty()
+  chk_flag(verbose)
+  chk_flag(once)
   bank <- arg_match(bank)
   action <- arg_match(action)
   approach <- arg_match(approach)

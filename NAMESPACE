@@ -17,24 +17,52 @@ export(read_parquet_multi)
 export(today)
 export(write_parquet_vx)
 export(ymd)
-importFrom(checkmate,assert_character)
-importFrom(checkmate,assert_choice)
-importFrom(checkmate,assert_class)
-importFrom(checkmate,assert_count)
-importFrom(checkmate,assert_data_frame)
-importFrom(checkmate,assert_date)
-importFrom(checkmate,assert_environment)
-importFrom(checkmate,assert_flag)
-importFrom(checkmate,assert_int)
-importFrom(checkmate,assert_list)
-importFrom(checkmate,assert_number)
-importFrom(checkmate,assert_numeric)
-importFrom(checkmate,assert_string)
-importFrom(checkmate,qassert)
-importFrom(glue,glue)
-importFrom(lubridate,today)
-importFrom(lubridate,ymd)
-importFrom(rlang,"%||%")
-importFrom(rlang,arg_match)
-importFrom(rlang,new_environment)
-importFrom(rlang,seq2)
+importFrom(lubridate,
+  today,
+  ymd
+)
+importFrom(rlang,
+  "%||%",
+  arg_match,
+  new_environment,
+  seq2
+)
+importFrom(zmisc,
+  chk_any,
+  chk_atomic,
+  chk_character,
+  chk_class,
+  chk_complex,
+  chk_count,
+  chk_data_frame,
+  chk_data_table,
+  chk_date,
+  chk_day,
+  chk_dnumber,
+  chk_dots_empty,
+  chk_double,
+  chk_environment,
+  chk_factor,
+  chk_flag,
+  chk_instant,
+  chk_integer,
+  chk_integerish,
+  chk_inumber,
+  chk_list,
+  chk_logical,
+  chk_match,
+  chk_naturalish,
+  chk_number,
+  chk_numeric,
+  chk_posixct,
+  chk_raw,
+  chk_scalar,
+  chk_string,
+  chk_that,
+  chk_tibble,
+  chk_true,
+  chk_znumber,
+  glue,
+  glue_data,
+  glue_vector
+)

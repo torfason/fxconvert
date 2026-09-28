@@ -1,20 +1,15 @@
 
-#' @importFrom checkmate qassert
-#' @importFrom checkmate assert_flag assert_string
-#'   assert_number assert_int assert_count assert_numeric
-#' @importFrom checkmate assert_date assert_character
-#' @importFrom checkmate assert_list assert_data_frame assert_class
-#' @importFrom checkmate assert_choice assert_environment
+
+#' @importFrom zmisc chk_any chk_atomic chk_character chk_class chk_complex
+#' @importFrom zmisc chk_count chk_data_frame chk_data_table chk_date chk_day
+#' @importFrom zmisc chk_dnumber chk_dots_empty chk_double chk_environment
+#' @importFrom zmisc chk_factor chk_flag chk_instant chk_integer chk_integerish
+#' @importFrom zmisc chk_inumber chk_list chk_logical chk_match chk_naturalish
+#' @importFrom zmisc chk_number chk_numeric chk_posixct chk_raw chk_scalar
+#' @importFrom zmisc chk_string chk_that chk_tibble chk_true chk_znumber
 NULL
 
-#' Assert that no dots arguments are passed
-#' @description This is an alias for `rlang::check_dots_empty()`, for
-#'   consistency with other arguments. The function throws an error if any
-#'   unnamed parameters were passed to the function where this is called.
-#' @keywords internal
-assert_dots_empty <- rlang::check_dots_empty
-
-#' @importFrom glue glue
+#' @importFrom zmisc glue glue_data glue_vector
 NULL
 
 #' @importFrom rlang %||% arg_match seq2 new_environment

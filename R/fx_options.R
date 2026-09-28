@@ -29,8 +29,8 @@ fx_options <- function(...,
   )
 
   # Verify object and that ... was unused before returning the object
-  assert_dots_empty()
-  assert_fxoptions(obj)
+  chk_dots_empty()
+  chk_fxoptions(obj)
 }
 
 
@@ -42,14 +42,14 @@ fx_options <- function(...,
 #' @param x An object to verify
 #' @return Unchanged input if valid, otherwise an error is thrown.
 #' @keywords internal
-assert_fxoptions <- function(x) {
+chk_fxoptions <- function(x) {
 
   # Verify input
-  assert_list(x)
-  assert_class(x, "fxconvert_fx_options")
-  assert_string(x$workspace)
-  assert_string(x$bank)
-  assert_string(x$repo)
+  chk_list(x, attr.ok = c("names", "class"))
+  chk_class(x, "fxconvert_fx_options")
+  chk_string(x$workspace)
+  chk_string(x$bank)
+  chk_string(x$repo)
 
   # Return input unchanged if it is valid
   invisible(x)

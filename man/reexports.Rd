@@ -12,6 +12,6 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{lubridate}{\code{\link[lubridate:now]{today}}, \code{\link[lubridate]{ymd}}}
+  \item{lubridate}{\code{\link[lubridate:today]{today()}}, \code{\link[lubridate:ymd]{ymd()}}}
 }}
 

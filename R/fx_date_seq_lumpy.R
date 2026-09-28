@@ -83,7 +83,7 @@ fx_lump_dates <- function(dates, lump_from = "millennium", lump_to = "decaday") 
   lump_units = c("millennium", "century", "decade", "year", "month", "decaday", "day")
 
   # Verify inputs. We don't allow day as an input in the outer function
-  assert_date(dates)
+  chk_date(dates)
   arg_match(lump_from, lump_units[1:5])
   arg_match(lump_to, lump_units[1:6])
 
@@ -291,8 +291,8 @@ rle_apply <- function(x, f, ...) {
 first_date <- function(x,  unit = c("millennium", "century", "decade",
                                     "year", "month", "decaday")) {
   # Verify inputs
-  assert_date(x)
-  assert_string(unit)
+  chk_date(x)
+  chk_string(unit)
   unit <- arg_match(unit)
 
   if (unit != "decaday") {
@@ -312,8 +312,8 @@ first_date <- function(x,  unit = c("millennium", "century", "decade",
 last_date <- function(x,  unit = c("millennium", "century", "decade",
                                     "year", "month", "decaday")) {
   # Verify inputs
-  assert_date(x)
-  assert_string(unit)
+  chk_date(x)
+  chk_string(unit)
   unit <- arg_match(unit)
 
   if (unit != "decaday") {
@@ -352,7 +352,7 @@ lump_dates_recursive <- function(dates,
   lump_units = c("millennium", "century", "decade", "year", "month", "decaday", "day")
 
   # Verify inputs
-  assert_date(dates)
+  chk_date(dates)
   arg_match(lump_unit_now, lump_units)
   arg_match(lump_unit_halt, lump_units)
   lump_unit_next = lump_units[which(lump_unit_now == lump_units) + 1]

@@ -18,8 +18,8 @@ utils::globalVariables(
 fx_get_fxdata_dir <- function(..., options = fx_options()) {
 
   # Check input
-  assert_dots_empty()
-  assert_fxoptions(options)
+  chk_dots_empty()
+  chk_fxoptions(options)
 
   # Construct
   app_dir <- rappdirs::user_data_dir("net.zulutime.r.fxconvert")
@@ -42,12 +42,12 @@ fx_duck_local <- function(bank, ...,
   xinform <- function(...) { invisible() }
 
   # Check input
-  assert_choice(bank, c("ecb", "cbi", "fed", "xfed"))
-  assert_dots_empty()
-  assert_flag(read_only)
-  assert_flag(wipe_db)
-  assert_fxoptions(options)
-  assert_environment(envir)
+  chk_match(bank, c("ecb", "cbi", "fed", "xfed"))
+  chk_dots_empty()
+  chk_flag(read_only)
+  chk_flag(wipe_db)
+  chk_fxoptions(options)
+  chk_environment(envir)
 
   # Ensure dbstate is initialized with defaults if running for first time
   # conns_used is the number of conns that have been given out
@@ -186,10 +186,10 @@ random_date <- function(n,
                         seed = NULL) {
 
   # Prep and verify input
-  assert_number(n)
+  chk_number(n)
   start_date <- lubridate::ymd(start_date)
   end_date   <- lubridate::ymd(end_date)
-  assert_number(seed, null.ok = TRUE)
+  chk_number(seed, null.ok = TRUE)
 
   # Inner function to generate
   generate <- function() {
@@ -274,11 +274,11 @@ write_parquet_vx <- function(x, file, ...,
                              verbose = FALSE) {
 
   # Verify inputs
-  assert_dots_empty()
-  assert_data_frame(x)
-  assert_string(file)
-  assert_character(compression_types)
-  assert_flag(verbose)
+  chk_dots_empty()
+  chk_data_frame(x)
+  chk_string(file)
+  chk_character(compression_types)
+  chk_flag(verbose)
 
   # Create a temporary directory to work with
   temp_dir <- fs::file_temp()
@@ -290,7 +290,8 @@ write_parquet_vx <- function(x, file, ...,
 
     # Write out file for each compression type
     cr <- compression_types |> sapply(\(cmpr){
-      cmpr_level <- zmisc::recode_tilde(cmpr, "gzip" ~ 9, "zstd" ~ 22, .default = NA)
+      cmpr_level <- dplyr::recode_values(cmpr, "gzip" ~ 9, "zstd" ~ 22, default = NA)
+
       filename <- fs::path(temp_dir, glue("{cmpr}.parquet"))
       x |> nanoparquet::write_parquet(file = filename,
                    compression = cmpr,
@@ -350,8 +351,8 @@ write_parquet_vx <- function(x, file, ...,
 read_parquet_multi <- function(path, ..., add_file_column = FALSE) {
 
   # Verify input
-  checkmate::assert_string(path)
-  checkmate::assert_flag(add_file_column)
+  chk_string(path, attr.ok = "class")
+  chk_flag(add_file_column)
 
   # List parquet files
   if (fs::dir_exists(path)) {

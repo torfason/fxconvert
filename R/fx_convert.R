@@ -12,14 +12,14 @@ fx_convert <- function(amount, from, to, fxdate = today(), bank = "ecb",
                        ...,  .interpolate = FALSE) {
 
   # Verify arguments
-  assert_numeric(amount)
-  assert_character(from)
-  assert_character(to)
+  chk_numeric(amount)
+  chk_character(from)
+  chk_character(to)
   fxdate <- ymd(fxdate)
-  assert_date(fxdate, any.missing = FALSE)
-  assert_string(bank)
-  assert_dots_empty()
-  assert_flag(.interpolate)
+  chk_date(fxdate, na.ok = FALSE)
+  chk_string(bank)
+  chk_dots_empty()
+  chk_flag(.interpolate)
 
   # Recycle arguments, to ensure amount is included in the recycling
   args <- tibble::tibble(

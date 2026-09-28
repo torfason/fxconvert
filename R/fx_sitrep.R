@@ -17,7 +17,7 @@ fx_sitrep <- function(bank = c("ecb", "cbi", "fed", "xfed"), verbose = TRUE) {
 
   # Verify and preprocess inputs
   bank <- arg_match(bank)
-  assert_flag(verbose)
+  chk_flag(verbose)
 
   # Roll-your-own log levels for now
   if (verbose) {

@@ -23,13 +23,13 @@
 fx_get <- function(from, to, fxdate = today(), bank = "ecb", ..., .interpolate = FALSE) {
 
   # Verify arguments
-  assert_character(from)
-  assert_character(to)
+  chk_character(from)
+  chk_character(to)
   fxdate <- ymd(fxdate)
-  assert_date(fxdate, any.missing = FALSE)
-  assert_string(bank)
-  assert_dots_empty()
-  assert_flag(.interpolate)
+  chk_date(fxdate, na.ok = FALSE)
+  chk_string(bank)
+  chk_dots_empty()
+  chk_flag(.interpolate)
 
   # Initialize once per session before getting
   fx_init(banks = bank, once = TRUE, verbose = FALSE)
@@ -123,10 +123,10 @@ fx_get_impl_apply <- function(from, to, fxdate, bank, .interpolate) {
 fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
 
   # Verify arguments
-  assert_string(from)
-  assert_string(to)
-  assert_string(bank)
-  assert_flag(.interpolate)
+  chk_string(from)
+  chk_string(to)
+  chk_string(bank)
+  chk_flag(.interpolate)
 
   # Verify and preprocess parameters
   from   <- tolower(from)
@@ -251,8 +251,8 @@ fx_get_multibank <- function(from, to, fxdate, bank = c("ecb", "cbi", "fed"), ..
 fx_baserates_join_dplyr <- function(currency, fxdate, bank = "ecb", ..., table_name, options = fx_options()) {
 
   # Verify arguments
-  assert_character(currency)
-  assert_string(bank)
+  chk_character(currency)
+  chk_string(bank)
 
   # Verify and preprocess parameters
   currency   <- tolower(currency)
@@ -285,9 +285,9 @@ fx_baserates_join_dplyr <- function(currency, fxdate, bank = "ecb", ..., table_n
 fx_baserates_join_duckdb <- function(currency, fxdate, bank = "ecb", ..., asof, table_name, options = fx_options()) {
 
   # Verify arguments (should not really be needed since this is an internal function)
-  assert_character(currency)
-  assert_date(fxdate, any.missing = FALSE)
-  assert_string(bank)
+  chk_character(currency)
+  chk_date(fxdate, na.ok = FALSE)
+  chk_string(bank)
 
   # Verify and preprocess parameters
   currency   <- tolower(currency)

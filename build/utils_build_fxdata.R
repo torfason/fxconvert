@@ -27,7 +27,7 @@ glue_vector <- function(., template = "{.}", ...,
       .sep = "", .envir = parent.frame(), .open = "{", .close = "}",
       .na = "NA", .null = character(), .comment = "#", .literal = FALSE,
       .transformer = glue::identity_transformer, .trim = TRUE) {
-  zmisc::assert_dots_empty()
+  chk_dots_empty()
   d.point <- tibble::tibble(. = .)
   glue::glue_data(template, .x = d.point,
           .sep = .sep, .envir = .envir, .open = .open, .close = .close,
@@ -177,9 +177,9 @@ fxdata_write_lumpy_parquet <- function(d, fxdata_folder, bank) {
 fxdata_write_lumpy_parquet_new <- function(d, fxdata_folder, bank, version, compression = "gzip") {
 
   # Verify inputs, ensure version is an integer
-  assert_tibble(d)
-  assert_string(fxdata_folder)
-  assert_string(bank)
+  chk_tibble(d)
+  chk_string(fxdata_folder)
+  chk_string(bank)
   qassert(version, "I1")   # typeof() == "integer" and length == 1
 
   # Determine fxdata bank folder and create if it does not exist
@@ -282,11 +282,11 @@ fxdata_write_lumpy_parquet_autocomp <- function(d, fxdata_folder, bank, version,
                   compression_types = c("gzip", "snappy", "uncompressed")) {
 
   # Verify inputs, ensure version is an integer
-  assert_tibble(d)
-  assert_string(fxdata_folder)
-  assert_string(bank)
-  assert_inumber(version)   # typeof() == "integer" and length == 1
-  assert_character(compression_types)
+  chk_tibble(d)
+  chk_string(fxdata_folder)
+  chk_string(bank)
+  chk_inumber(version)   # typeof() == "integer" and length == 1
+  chk_character(compression_types)
 
   # Determine fxdata bank folder and create if it does not exist
   fxdata_bank_folder <- file.path(fxdata_folder, bank)
