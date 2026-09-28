@@ -208,7 +208,7 @@ fxdata_write_lumpy_parquet_new <- function(d, fxdata_folder, bank, version, comp
   # Some initialization before entering the loop, for parquet and speed
   pq_options = parquet_options(
     class = c("tbl_df", "tbl"),  # Parquet files should be read as tibbles
-    compression_level = zmisc::recode_tilde(compression, "gzip" ~ 9, "zstd" ~ 22, .default = NA))       # They should be maximally compressed
+    compression_level = dplyr::recode_values(compression, "gzip" ~ 9, "zstd" ~ 22, default = NA))       # They should be maximally compressed
   written_file_count <- 0        # Loop variable initialization
   version_ignored_count <- 0 # Any files where mismatching version was ignored
 
