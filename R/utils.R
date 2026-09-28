@@ -81,7 +81,9 @@ fx_duck_local <- function(bank, ...,
       fs::file_delete(dbfile)
 
     # Prepare a new read-write connection and register a deferred clenaup
-    conn <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = FALSE))
+    conn <- duckdb::dbConnect(duckdb::duckdb(dbfile,
+                                             read_only = FALSE,
+                                             shared_home = FALSE))
 
     xinform("Creating read/write connection ...")
     withr::defer({
@@ -114,7 +116,9 @@ fx_duck_local <- function(bank, ...,
       xinform("Getting readonly connection from pool...")
     } else {
       # No conns in the pool, we need to create a new one
-      conn <- duckdb::dbConnect(duckdb::duckdb(dbfile, read_only = TRUE))
+      conn <- duckdb::dbConnect(duckdb::duckdb(dbfile,
+                                               read_only = TRUE,
+                                               shared_home = FALSE))
       xinform("Creating readonly connection ...")
     }
 
