@@ -32,6 +32,56 @@ fx_get_fxdata_dir <- function(..., options = fx_options()) {
   ws_dir
 }
 
+# Get logger with a specified verbosity level
+fx_get_logger <- function(verbosity) {
+
+  verbosity <- as.character(verbosity)
+  noop <- function(x, ...) {invisible(x)}
+
+  if (verbosity %in% c("0", "FALSE", "none")) {
+    return(list(
+      abort  = cli::cli_abort,
+      warn   = cli::cli_warn,
+      inform = noop,
+      debug  = noop,
+      trace  = noop,
+      level  = 0
+    ))
+  } else if (verbosity %in% c("1", "TRUE", "inform")) {
+    return(list(
+      abort  = cli::cli_abort,
+      warn   = cli::cli_warn,
+      inform = cli::cli_inform,
+      debug  = noop,
+      trace  = noop,
+      level  = 1
+    ))
+  } else if (verbosity %in% c("2", "debug")) {
+    return(list(
+      abort  = cli::cli_abort,
+      warn   = cli::cli_warn,
+      inform = cli::cli_inform,
+      debug  = cli::cli_inform,
+      trace  = noop,
+      level  = 2
+    ))
+  } else if (verbosity %in% c("3", "trace")) {
+    return(list(
+      abort  = cli::cli_abort,
+      warn   = cli::cli_warn,
+      inform = cli::cli_inform,
+      debug  = cli::cli_inform,
+      trace  = cli::cli_inform,
+      level  = 3
+    ))
+  } else {
+    cli::cli_abort("Incorrect verbocity specification: '{verbosity}'")
+  }
+}
+
+
+
+
 # Return a connection that will get handled after it has been used
 fx_duck_local <- function(bank, ...,
                           read_only = TRUE,
