@@ -23,10 +23,9 @@
 fx_get <- function(from, to, fxdate = today(), bank = "ecb", ..., .interpolate = FALSE) {
 
   # Verify arguments
-  chk_character(from)
-  chk_character(to)
-  fxdate <- ymd(fxdate)
-  chk_date(fxdate, na.ok = FALSE)
+  chk_character(from, na.ok = FALSE)
+  chk_character(to, na.ok = FALSE)
+  fxdate <- ymd(fxdate) |> chk_date(na.ok = FALSE)
   chk_string(bank)
   chk_dots_empty()
   chk_flag(.interpolate)
@@ -122,17 +121,13 @@ fx_get_impl_apply <- function(from, to, fxdate, bank, .interpolate) {
 #' @keywords internal
 fx_get_single <- function(from, to, fxdate, bank = "ecb", ..., .interpolate = FALSE) {
 
-  # Verify arguments
-  chk_string(from)
-  chk_string(to)
-  chk_string(bank)
+  # Verify and preprocess arguments
+  from   <- from   |> chk_string() |> tolower()
+  to     <- to     |> chk_string() |> tolower()
+  fxdate <- fxdate |> ymd() |> chk_day()
+  bank   <- bank   |> chk_string() |> tolower()
+  chk_dots_empty()
   chk_flag(.interpolate)
-
-  # Verify and preprocess parameters
-  from   <- tolower(from)
-  to     <- tolower(to)
-  fxdate <- ymd(fxdate)
-  bank   <- tolower(bank)
 
   # Choose whether to used the filled version of the table
   if (.interpolate) {
@@ -250,14 +245,14 @@ fx_get_multibank <- function(from, to, fxdate, bank = c("ecb", "cbi", "fed"), ..
 # Implementation to construct baserates table with a dplyr join
 fx_baserates_join_dplyr <- function(currency, fxdate, bank = "ecb", ..., table_name, options = fx_options()) {
 
-  # Verify arguments
-  chk_character(currency)
-  chk_string(bank)
+  # Verify and preprocess arguments
+  currency <- currency |> chk_character() |> tolower()
+  fxdate   <- fxdate   |> ymd(fxdate) |> chk_day()
+  bank     <- bank     |> chk_character() |> tolower()
+  chk_dots_empty()
+  chk_string(table_name)
+  chk_fxoptions(options)
 
-  # Verify and preprocess parameters
-  currency   <- tolower(currency)
-  fxdate <- ymd(fxdate)
-  bank   <- tolower(bank)
 
   # Ensure vectors are recyclable to the same length
   d.fxrequest <- dplyr::tibble(
@@ -284,14 +279,14 @@ fx_baserates_join_dplyr <- function(currency, fxdate, bank = "ecb", ..., table_n
 # Implementation to construct baserates table with a duckdb join
 fx_baserates_join_duckdb <- function(currency, fxdate, bank = "ecb", ..., asof, table_name, options = fx_options()) {
 
-  # Verify arguments (should not really be needed since this is an internal function)
-  chk_character(currency)
-  chk_date(fxdate, na.ok = FALSE)
-  chk_string(bank)
-
-  # Verify and preprocess parameters
-  currency   <- tolower(currency)
-  bank   <- tolower(bank)
+  # Verify and preprocess arguments
+  currency <- currency |> chk_character() |> tolower()
+  fxdate   <- fxdate   |> ymd() |> chk_date(na.ok = FALSE)
+  bank     <- bank     |> chk_string() |> tolower()
+  chk_dots_empty()
+  chk_flag(asof)
+  chk_string(table_name)
+  chk_fxoptions(options)
 
   # Ensure vectors are recyclable to the same length
   d.fxrequest <- dplyr::tibble(
