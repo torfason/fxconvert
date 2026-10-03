@@ -45,7 +45,7 @@ restrictions or other reasons.
 | HKD    | Hong Kong Dollar            | 1999-2026 | 2006-2026 | 1981-2026 |
 | KRW    | South Korean Won            | 1999-2026 | 2006-2026 | 1981-2026 |
 | SGD    | Singapore Dollar            | 1999-2026 | 2006-2026 | 1981-2026 |
-| CNY    | Yuan Renminbi               | 2005-2026 | 1981-2026 | 1981-2026 |
+| CNY    | Chinese Yuan Renminbi       | 2005-2026 | 1981-2026 | 1981-2026 |
 | THB    | Thai Baht                   | 2005-2026 | 2008-2026 | 1981-2026 |
 | MXN    | Mexican Peso                | 2008-2026 | 2006-2026 | 1993-2026 |
 | BRL    | Brazilian Real              | 2008-2026 | 2006-2026 | 1995-2026 |
@@ -62,14 +62,14 @@ restrictions or other reasons.
 | HRK    | Croatian Kuna               | 2005-2022 | 2006-2022 |     .     |
 | RUB    | Russian Ruble               | 2005-2022 | 2006-2022 |     .     |
 | TRY    | Turkish Lira                | 2005-2026 | 2006-2026 |     .     |
-| ILS    | New Israeli Shekel          | 2011-2026 | 2006-2026 |     .     |
+| ILS    | Israeli Shekel              | 2011-2026 | 2006-2026 |     .     |
 | MYR    | Malaysian Ringgit           | 2005-2026 |     .     | 1971-2026 |
 | TRL    | Turkish Lira (old)          | 1999-2004 |     .     |     .     |
 | ROL    | Romanian Leu (old)          | 1999-2005 |     .     |     .     |
 | SIT    | Slovenian Tolar             | 1999-2006 |     .     |     .     |
 | CYP    | Cypriot Pound               | 1999-2007 |     .     |     .     |
 | SKK    | Slovak Koruna               | 1999-2008 |     .     |     .     |
-| IDR    | Rupiah                      | 2005-2026 |     .     |     .     |
+| IDR    | Indonesian Rupiah           | 2005-2026 |     .     |     .     |
 | PHP    | Philippine Peso             | 2005-2026 |     .     |     .     |
 | RON    | Romanian Leu                | 2005-2026 |     .     |     .     |
 | TWD    | New Taiwan Dollar           |     .     | 2006-2026 | 1983-2026 |
