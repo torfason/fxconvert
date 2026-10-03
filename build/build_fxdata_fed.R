@@ -133,7 +133,7 @@ cat("\n")
 last_date_available  <- max(d.tidy$fxdate)
 first_date_available <- min(d.tidy$fxdate)
 if (first_date_available == ymd("1971-01-04")) {
-  # The first days of 1 were in fact only a weekend so they should be NA-filled
+  # Fill all the way to 1970-01-01 so that 197X can be a fully packed file
   first_date_available <- ymd("1970-01-01")
 }
 

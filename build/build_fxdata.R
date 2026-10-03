@@ -91,8 +91,9 @@ source(here("build", "build_fxdata_cbi.R"), local = TRUE) |>
 # Retrieve and write FED data:
 # = = = = = = = = = = = = = =
 cat("\n")
-source(here("build", "build_fxdata_fed.R"), local = TRUE) |>
-  system.time() |> try_fetch(error = err_to_warning)
+# source(here("build", "build_fxdata_fed.R"), local = TRUE) |>
+#   system.time() |> try_fetch(error = err_to_warning)
+message("Skipping FED data, web site seems to be out of order")
 
 cat("\n")
 
