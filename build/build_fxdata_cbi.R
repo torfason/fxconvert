@@ -132,19 +132,19 @@ cat("Current Date: ", Sys.time() |> format("%a, %d %b %Y %X %Z"), "\n")
 cat("Refresh Hours:", refresh_hours, "\n")
 
 # Fetch each of the four segments
-d.7.1900_full <- cbi_url(7, "1900-01-01", "2024-12-31") |>
+d.7.1900_full <- cbi_url(7, "1900-01-01", "2025-12-31") |>
   pin(refresh_hours = refresh_inf) |>
   pkgcond::suppress_messages("pin\\(\\) found recent version, using it ...") |>
   cbi_read_csv()
-d.9.1900_full <- cbi_url(9, "1900-01-01", "2024-12-31") |>
+d.9.1900_full <- cbi_url(9, "1900-01-01", "2025-12-31") |>
   pin(refresh_hours = refresh_inf) |>
   pkgcond::suppress_messages("pin\\(\\) found recent version, using it ...") |>
   cbi_read_csv()
-d.7.current <- cbi_url(7, "2025-01-01") |>
+d.7.current <- cbi_url(7, "2026-01-01") |>
   pin(refresh_hours = refresh_hours) |>
   pkgcond::suppress_messages("pin\\(\\) found recent version, using it ...") |>
   cbi_read_csv()
-d.9.current <- cbi_url(9, "2025-01-01") |>
+d.9.current <- cbi_url(9, "2026-01-01") |>
   pin(refresh_hours = refresh_hours) |>
   pkgcond::suppress_messages("pin\\(\\) found recent version, using it ...") |>
   cbi_read_csv()
@@ -154,25 +154,26 @@ d.all.pre_join.new_currencies <- bind_rows(
   bind_rows(d.7.1900_full, d.7.current) |> mutate(GroupID = 7),
   bind_rows(d.9.1900_full, d.9.current) |> mutate(GroupID = 9) )
 
-cat("Filtering out unimplemented currencies, specifically:\n")
+# cat("Filtering out unimplemented currencies, specifically:\n")
 
-# Some error due to changes in CBI data format
-d.new_omitted_currencies <- d.all.pre_join.new_currencies |>
-  anti_join(d.handmade_metadata_cbi, by = join_by(ID)) |>
-  mutate(Date = Date |> str_remove(" .*$") |> mdy()) |>
-  mutate(WhichRate = Description |> str_remove("^.*, ") |> str_remove("\\.$")) |>
-  summarise(across(c(GroupID, Name, WhichRate), zingle),
-            From = min(Date), To = max(Date), Avail = n(), AvgRate = mean(Value),
-            .by = ID)
-print(d.new_omitted_currencies)
+# # Some error due to changes in CBI data format
+# d.new_omitted_currencies <- d.all.pre_join.new_currencies |>
+#   anti_join(d.handmade_metadata_cbi, by = join_by(ID)) |>
+#   mutate(Date = Date |> str_remove(" .*$") |> mdy()) |>
+#   mutate(WhichRate = Description |> str_remove("^.*, ") |> str_remove("\\.$")) |>
+#   summarise(across(c(GroupID, Name, WhichRate), zingle),
+#             From = min(Date), To = max(Date), Avail = n(), AvgRate = mean(Value),
+#             .by = ID)
+# print(d.new_omitted_currencies)
 
 
-# d.all.pre_join must exclude the listed new currencies (until next version of the data)
-print(str_glue("These currencies ",
-               "({str_c(d.new_omitted_currencies$ID, collapse=', ')}) ",
-               "will be filtered out of the list."))
-d.all.pre_join <- d.all.pre_join.new_currencies |>
-  filter_out(ID %in% d.new_omitted_currencies$ID)
+# # d.all.pre_join must exclude the listed new currencies (until next version of the data)
+# print(str_glue("These currencies ",
+#                "({str_c(d.new_omitted_currencies$ID, collapse=', ')}) ",
+#                "will be filtered out of the list."))
+# d.all.pre_join <- d.all.pre_join.new_currencies |>
+#   filter_out(ID %in% d.new_omitted_currencies$ID)
+d.all.pre_join <- d.all.pre_join.new_currencies
 
 # Join
 d.all <- inner_join(d.handmade_metadata_cbi, d.all.pre_join, by = join_by(ID), unmatched = "error")
@@ -200,7 +201,7 @@ bank = "cbi"
 # Write to main directory using improved lumps and automatic compression selection
 fxdata_folder <- here("..", "fxdata")
 bank <- "cbi"
-fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
+fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 3L)
 fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "direct", new_name_order = TRUE)
 
 # Write to dev directory using improved lumps and automatic compression selection

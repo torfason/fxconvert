@@ -29,6 +29,10 @@ ID,GroupID,Symbol,Frequency,RateType,CurrencyNameIS,CurrencyName
 3503,7,SAR,D,M,Sádi-arabískt ríal,Saudi Riyal
 3504,7,VEF,D,M,Venesúelskur bólivari,Venezuelan Bolívar
 19254,7,KWD,D,M,Kúveiskur denari,Kuwaiti Dinar
+19259,7,IDR,D,M,Indónesísk rúpía,Indonesian Rupiah
+19260,7,MYR,D,M,Malasískt ringit,Malaysian Ringgit
+19261,7,PHP,D,M,Filippseyskur pesi,Philippine Peso
+19262,7,RON,D,M,Rúmenskt lei,Romanian Leu
 4051,9,ATS,D,B,Austurrískur skildingur,Austrian Schilling
 4052,9,ATS,D,M,Austurrískur skildingur,Austrian Schilling
 4053,9,ATS,D,S,Austurrískur skildingur,Austrian Schilling

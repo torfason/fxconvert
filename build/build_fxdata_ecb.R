@@ -42,7 +42,7 @@ d <- fxdata_fill(d.tidy, first_date_available, last_date_available)
 # Write to main directory using improved lumps and automatic compression selection
 fxdata_folder <- here("..", "fxdata")
 bank <- "ecb"
-fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 2L)
+fxdata_write_lumpy_parquet_autocomp(d, fxdata_folder, bank, version = 3L)
 fxdata_write_metadata_json(d, fxdata_folder, bank = bank, quotation_method = "indirect", new_name_order = TRUE)
 
 # Write to dev directory using improved lumps and automatic compression selection
